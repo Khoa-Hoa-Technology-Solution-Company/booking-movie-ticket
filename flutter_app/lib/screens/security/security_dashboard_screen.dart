@@ -1,0 +1,348 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../services/security_service.dart';
+import 'security_issues_screen.dart';
+import 'login_history_screen.dart';
+import 'security_alerts_screen.dart';
+
+class SecurityDashboardScreen extends StatefulWidget {
+  const SecurityDashboardScreen({super.key});
+
+  @override
+  State<SecurityDashboardScreen> createState() => _SecurityDashboardScreenState();
+}
+
+class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
+  bool _isLoading = false;
+  Map<String, dynamic>? _dashboardData;
+  bool _twoFactorEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await securityService.getDashboard();
+      setState(() {
+        _dashboardData = data;
+        _twoFactorEnabled = data['security']?['twoFactorEnabled'] ?? false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không tải được thông tin bảo mật: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleToggle2FA(bool value) async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await securityService.toggle2FA(value);
+      setState(() {
+        _twoFactorEnabled = result['twoFactorEnabled'] ?? value;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(value 
+                ? 'Đã BẬT xác thực 2 lớp (2FA) thành công!' 
+                : 'Đã TẮT xác thực 2 lớp (2FA).'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      // Reload dashboard to update security score
+      await _loadDashboardData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Thao tác thất bại: $e'), backgroundColor: Colors.red),
+        );
+      }
+      // Restore state if failed
+      setState(() => _twoFactorEnabled = !value);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final security = _dashboardData?['security'];
+    final int securityScore = security?['securityScore'] ?? 50;
+    
+    Color scoreColor = Colors.redAccent;
+    if (securityScore >= 75) {
+      scoreColor = Colors.greenAccent;
+    } else if (securityScore >= 50) {
+      scoreColor = Colors.amberAccent;
+    }
+
+    final lastLoginStr = security?['lastLogin'] != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(security!['lastLogin']).toLocal())
+        : 'Chưa có dữ liệu';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F1A),
+      appBar: AppBar(
+        title: const Text('Trung Tâm Bảo Mật', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF16162A),
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: _isLoading && _dashboardData == null
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          : RefreshIndicator(
+              onRefresh: _loadDashboardData,
+              color: const Color(0xFFC084FC),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Security Score Gauge
+                    Card(
+                      color: const Color(0xFF16162A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 130,
+                                  height: 130,
+                                  child: CircularProgressIndicator(
+                                    value: securityScore / 100,
+                                    strokeWidth: 12,
+                                    backgroundColor: Colors.white10,
+                                    color: scoreColor,
+                                  ),
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      '$securityScore%',
+                                      style: theme.textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Text('An toàn', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Điểm Bảo Mật Tài Khoản',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              securityScore >= 75
+                                  ? 'Tài khoản của bạn đang được bảo vệ rất tốt.'
+                                  : 'Hãy khắc phục các sự cố bảo mật để bảo vệ tài khoản tốt hơn.',
+                              style: const TextStyle(color: Colors.white54, fontSize: 12),
+                               textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Quick Toggle for 2FA/OTP
+                    Card(
+                      color: const Color(0xFF16162A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: SwitchListTile(
+                        value: _twoFactorEnabled,
+                        onChanged: _isLoading ? null : _handleToggle2FA,
+                        title: const Text(
+                          'Xác thực 2 bước (2FA)',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        subtitle: const Text(
+                          'Yêu cầu nhập mã OTP gửi qua Email/SMS mỗi khi đăng nhập',
+                          style: TextStyle(color: Colors.white54, fontSize: 11),
+                        ),
+                        activeColor: const Color(0xFFC084FC),
+                        activeTrackColor: const Color(0xFFC084FC).withOpacity(0.3),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Kênh xác minh status
+                    Card(
+                      color: const Color(0xFF16162A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Các kênh liên lạc & Xác minh',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildChannelStatus(
+                              title: 'Địa chỉ Email',
+                              value: security?['emailVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
+                              isVerified: security?['emailVerified'] == true,
+                              hasChannel: security?['hasEmail'] == true,
+                              icon: Icons.email,
+                            ),
+                            const Divider(color: Colors.white12, height: 16),
+                            _buildChannelStatus(
+                              title: 'Số điện thoại',
+                              value: security?['phoneVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
+                              isVerified: security?['phoneVerified'] == true,
+                              hasChannel: security?['hasPhoneNumber'] == true,
+                              icon: Icons.phone,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Navigation Menu Options
+                    const Text('Báo cáo chi tiết', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    
+                    _buildNavCard(
+                      icon: Icons.warning_amber_rounded,
+                      iconColor: Colors.amberAccent,
+                      title: 'Sự cố bảo mật cần xử lý',
+                      subtitle: 'Xem các cảnh báo lỗi hoặc khuyến nghị',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SecurityIssuesScreen()),
+                        ).then((_) => _loadDashboardData());
+                      },
+                    ),
+                    _buildNavCard(
+                      icon: Icons.history_toggle_off_rounded,
+                      iconColor: Colors.blueAccent,
+                      title: 'Lịch sử đăng nhập thiết bị',
+                      subtitle: 'Xem danh sách thiết bị và địa chỉ IP',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginHistoryScreen()),
+                        );
+                      },
+                    ),
+                    _buildNavCard(
+                      icon: Icons.add_alert_rounded,
+                      iconColor: Colors.redAccent,
+                      title: 'Cảnh báo và Nhật ký bảo mật',
+                      subtitle: 'Các cảnh báo đăng nhập lạ hoặc khóa acc',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SecurityAlertsScreen()),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Text(
+                        'Đăng nhập cuối: $lastLoginStr',
+                        style: const TextStyle(color: Colors.white30, fontSize: 11),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildChannelStatus({
+    required String title,
+    required String value,
+    required bool isVerified,
+    required bool hasChannel,
+    required IconData icon,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Colors.white70, size: 18),
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          ],
+        ),
+        Row(
+          children: [
+            if (!hasChannel)
+              const Text('Chưa liên kết', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold))
+            else
+              Text(
+                value,
+                style: TextStyle(
+                  color: isVerified ? Colors.greenAccent : Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            const SizedBox(width: 4),
+            if (hasChannel)
+              Icon(
+                isVerified ? Icons.check_circle_outline : Icons.error_outline,
+                color: isVerified ? Colors.greenAccent : Colors.redAccent,
+                size: 14,
+              )
+            else
+              const Icon(Icons.help_outline, color: Colors.grey, size: 14),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF16162A),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: CircleAvatar(
+          backgroundColor: iconColor.withOpacity(0.1),
+          child: Icon(icon, color: iconColor),
+        ),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 16),
+        onTap: onTap,
+      ),
+    );
+  }
+}
