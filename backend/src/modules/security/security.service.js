@@ -78,6 +78,7 @@ async function getDashboard(userId) {
   return {
     hasEmail: !!user.email,
     hasPhoneNumber: !!user.phoneNumber,
+    accountVerified: !!user.emailVerified || !!user.phoneVerified,
     emailVerified: user.emailVerified,
     phoneVerified: user.phoneVerified,
     twoFactorEnabled: user.twoFactorEnabled,

@@ -104,17 +104,19 @@ async function register({ name, email, phoneNumber, password }) {
   }
 
   return {
-    id: user.id,
+    userId: user.id,
     name: user.name,
     email: user.email,
     phoneNumber: user.phoneNumber,
     emailVerified: user.emailVerified,
     phoneVerified: user.phoneVerified,
-    message: cleanEmail && cleanPhone
-      ? 'Registration successful. Please verify your email and phone number.'
-      : cleanEmail
-        ? 'Registration successful. Please verify your email.'
-        : 'Registration successful. Please verify your phone number.',
+    emailVerificationRequired: !!cleanEmail,
+    phoneVerificationRequired: !!cleanPhone,
+    availableVerificationMethods: [
+      ...(cleanEmail ? ['EMAIL'] : []),
+      ...(cleanPhone ? ['PHONE'] : []),
+    ],
+    message: 'Registration successful. Please verify your account.',
   };
 }
 
@@ -207,17 +209,13 @@ async function login({ identifier, email, password }, req) {
   }
 
   // 4. Password đúng → kiểm tra verify chưa
-  if (user.email && !user.emailVerified) {
+  // 4. Password đúng → kiểm tra xem account có ít nhất một phương thức đã verify
+  const accountVerified = !!user.emailVerified || !!user.phoneVerified;
+  if (!accountVerified) {
+    // Không cho login nếu cả email và phone đều chưa verified
     throw Object.assign(
-      new Error('Please verify your email before logging in'),
-      { statusCode: 403, requireEmailVerification: true, email: user.email }
-    );
-  }
-
-  if (!user.email && user.phoneNumber && !user.phoneVerified) {
-    throw Object.assign(
-      new Error('Please verify your phone number before logging in'),
-      { statusCode: 403, requirePhoneVerification: true, phoneNumber: user.phoneNumber }
+      new Error('Please verify your email or phone number before logging in'),
+      { statusCode: 403, requireAccountVerification: true, email: user.email, phoneNumber: user.phoneNumber }
     );
   }
 
@@ -724,9 +722,12 @@ async function completeLogin(user, ipAddress, userAgent, deviceName) {
       id: user.id,
       name: user.name,
       email: user.email,
+      phoneNumber: user.phoneNumber,
+      accountVerified: user.emailVerified || user.phoneVerified,
       identifier: user.email || user.phoneNumber,
       role: user.role,
       emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
       twoFactorEnabled: user.twoFactorEnabled,
     },
   };

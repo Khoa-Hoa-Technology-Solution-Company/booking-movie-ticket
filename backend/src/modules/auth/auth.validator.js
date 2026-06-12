@@ -27,6 +27,12 @@ const registerSchema = z.object({
     .optional()
     .or(z.literal(''))
     .or(z.null()),
+  confirmPassword: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -51,6 +57,16 @@ const registerSchema = z.object({
 }, {
   message: 'Invalid Vietnamese phone number format',
   path: ['phoneNumber'],
+}).refine((data) => {
+  // If confirmPassword is provided, it must match password
+  const cp = data.confirmPassword;
+  if (cp && cp.trim() !== '') {
+    return data.password === cp;
+  }
+  return true;
+}, {
+  message: 'Confirm password does not match password',
+  path: ['confirmPassword'],
 });
 
 // --- Login ---
@@ -69,7 +85,6 @@ const loginSchema = z.object({
     .optional()
     .or(z.literal(''))
     .or(z.null()),
-    .or(z.null()),
   password: z
     .string()
     .min(1, 'Password is required'),
@@ -85,13 +100,6 @@ const loginSchema = z.object({
   return hasIdentifier || hasEmail;
 }, {
   message: 'Identifier is required',
-  path: ['identifier'],
-}).refine((data) => {
-  const hasIdentifier = data.identifier && data.identifier.trim() !== '';
-  const hasEmail = data.email && data.email.trim() !== '';
-  return hasIdentifier || hasEmail;
-}, {
-  message: 'Email or phone number is required',
   path: ['identifier'],
 });
 
@@ -129,6 +137,7 @@ const verifyEmailSchema = z.object({
 });
 
 // --- Verify OTP ---
+// Accept either `identifier` (email or phone) OR `email` explicitly. One is required.
 const verifyOtpSchema = z.object({
   identifier: z
     .string()
@@ -139,8 +148,12 @@ const verifyOtpSchema = z.object({
   email: z
     .string()
     .email('Invalid email address')
+    .max(255)
     .toLowerCase()
-    .trim(),
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
   code: z
     .string()
     .length(6, 'OTP must be 6 digits')
@@ -151,6 +164,13 @@ const verifyOtpSchema = z.object({
     .optional()
     .or(z.literal(''))
     .or(z.null()),
+}).refine((data) => {
+  const hasIdentifier = data.identifier && data.identifier.trim() !== '';
+  const hasEmail = data.email && data.email.trim() !== '';
+  return hasIdentifier || hasEmail;
+}, {
+  message: 'Identifier or email is required',
+  path: ['identifier'],
 });
 
 // --- Resend Email Code ---
