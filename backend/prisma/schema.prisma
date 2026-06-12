@@ -190,8 +190,8 @@ model Movie {
   id          Int         @id @default(autoincrement())
   title       String      @db.VarChar(255)
   description String      @db.Text
-  posterUrl   String      @map("poster_url") @db.VarChar(500)
-  trailerUrl  String?     @map("trailer_url") @db.VarChar(500)
+  posterUrl   String      @map("poster_url") @db.Text
+  trailerUrl  String?     @map("trailer_url") @db.Text
   duration    Int         // Thời lượng phim (phút)
   ageRating   String      @map("age_rating") @db.VarChar(10) // P, C13, C16, C18
   genre       String      @db.VarChar(255) // "Action, Sci-Fi"
@@ -214,7 +214,7 @@ model Cinema {
   name      String   @db.VarChar(255)
   address   String   @db.VarChar(500)
   city      String   @db.VarChar(100)
-  imageUrl  String?  @map("image_url") @db.VarChar(500)
+  imageUrl  String?  @map("image_url") @db.Text
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
