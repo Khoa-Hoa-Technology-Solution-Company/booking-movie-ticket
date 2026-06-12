@@ -39,10 +39,16 @@
 - Use 6-digit codes.
 - Store only code hash.
 - Email verification expires in 10 minutes.
+- Phone verification uses the same verification code table and expires in 10 minutes.
 - OTP login expires in 5 minutes.
 - Limit attempts.
 - Mark used after success.
 - Local development can log raw code only if `LOG_EMAIL_CODES=true`.
+
+### Email or Phone Login
+- Register must accept email, phone number, or both.
+- Login must accept a single `identifier` field that can be email or Vietnamese phone number.
+- Normalize Vietnamese phone numbers before storing and before lookup.
 
 ### Account Protection
 - Lock account for 5 minutes after 5 failed password attempts.

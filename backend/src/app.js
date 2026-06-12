@@ -11,6 +11,7 @@ const errorHandler = require('./middleware/errorHandler');
 // Import routes
 const authRoutes = require('./modules/auth/auth.routes');
 const securityRoutes = require('./modules/security/security.routes');
+const usersRoutes = require('./modules/users/users.routes');
 const moviesRoutes = require('./modules/movies/movies.routes');
 const cinemasRoutes = require('./modules/cinemas/cinemas.routes');
 const showtimesRoutes = require('./modules/showtimes/showtimes.routes');
@@ -60,6 +61,9 @@ app.use('/api/auth', authRoutes);
 
 // Security module
 app.use('/api/security', securityRoutes);
+
+// Users module
+app.use('/api/users', usersRoutes);
 
 // Movie booking modules
 app.use('/api/movies', moviesRoutes);

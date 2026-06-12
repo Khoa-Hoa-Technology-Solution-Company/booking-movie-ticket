@@ -113,7 +113,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              item['deviceName'] ?? 'Thiết bị không rõ',
+                                              item['email'] ?? item['deviceName'] ?? 'Thiết bị không rõ',
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,

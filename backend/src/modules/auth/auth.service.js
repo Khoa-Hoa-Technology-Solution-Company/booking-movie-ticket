@@ -19,6 +19,10 @@ async function register({ name, email, phoneNumber, password }) {
   const cleanEmail = email && email.trim() !== '' ? email.toLowerCase().trim() : null;
   const cleanPhone = phoneNumber && phoneNumber.trim() !== '' ? normalizePhoneNumber(phoneNumber) : null;
 
+  if (!cleanEmail && !cleanPhone) {
+    throw Object.assign(new Error('Either email or phone number is required'), { statusCode: 400 });
+  }
+
   // 1. Kiểm tra email đã tồn tại chưa
   if (cleanEmail) {
     const existingUserByEmail = await prisma.user.findUnique({
@@ -68,35 +72,35 @@ async function register({ name, email, phoneNumber, password }) {
     },
   });
 
-  // 4. Tạo mã xác minh (email hoặc phone)
-  const code = generateVerificationCode();
-  const codeHash = hashSHA256(code);
   const expiresAt = new Date(Date.now() + config.security.emailCodeExpiryMinutes * 60 * 1000);
 
   if (cleanEmail) {
+    const emailCode = generateVerificationCode();
     await prisma.verificationCode.create({
       data: {
         userId: user.id,
-        codeHash,
+        codeHash: hashSHA256(emailCode),
         type: 'EMAIL_VERIFY',
         expiresAt,
       },
     });
 
-    console.log(`\n🔑 VERIFICATION CODE for ${cleanEmail}: ${code}\n`);
-    await emailService.sendVerificationEmail(cleanEmail, name, code);
-  } else {
-    // Nếu đăng ký bằng số điện thoại (không điền email)
+    console.log(`\n🔑 VERIFICATION CODE for ${cleanEmail}: ${emailCode}\n`);
+    await emailService.sendVerificationEmail(cleanEmail, name, emailCode);
+  }
+
+  if (cleanPhone) {
+    const phoneCode = generateVerificationCode();
     await prisma.verificationCode.create({
       data: {
         userId: user.id,
-        codeHash,
+        codeHash: hashSHA256(phoneCode),
         type: 'PHONE_VERIFY',
         expiresAt,
       },
     });
 
-    console.log(`\n🔑 PHONE VERIFICATION CODE for ${cleanPhone}: ${code}\n`);
+    console.log(`\n🔑 PHONE VERIFICATION CODE for ${cleanPhone}: ${phoneCode}\n`);
   }
 
   return {
@@ -106,9 +110,11 @@ async function register({ name, email, phoneNumber, password }) {
     phoneNumber: user.phoneNumber,
     emailVerified: user.emailVerified,
     phoneVerified: user.phoneVerified,
-    message: cleanEmail
-      ? 'Registration successful. Please verify your email.'
-      : 'Registration successful. Please verify your phone number.',
+    message: cleanEmail && cleanPhone
+      ? 'Registration successful. Please verify your email and phone number.'
+      : cleanEmail
+        ? 'Registration successful. Please verify your email.'
+        : 'Registration successful. Please verify your phone number.',
   };
 }
 
@@ -118,21 +124,24 @@ async function register({ name, email, phoneNumber, password }) {
  * Đăng nhập
  * Flow: check user → check lock → verify password → check 2FA → ghi history → trả token
  */
-async function login({ identifier, password }, req) {
+async function login({ identifier, email, password }, req) {
   const ipAddress = getClientIP(req);
   const userAgent = req.headers['user-agent'] || 'Unknown';
-  const deviceName = parseDeviceName(userAgent);
+  const deviceName = req.body?.deviceName && req.body.deviceName.trim() !== ''
+    ? req.body.deviceName.trim()
+    : parseDeviceName(userAgent);
 
   // 1. Tìm user theo email hoặc phone number
-  const isEmail = identifier.includes('@');
+  const loginIdentifier = (identifier && identifier.trim()) || (email && email.trim()) || '';
+  const isEmail = loginIdentifier.includes('@');
   let user;
 
   if (isEmail) {
     user = await prisma.user.findUnique({
-      where: { email: identifier.toLowerCase().trim() },
+      where: { email: loginIdentifier.toLowerCase().trim() },
     });
   } else {
-    const normalizedPhone = normalizePhoneNumber(identifier);
+    const normalizedPhone = normalizePhoneNumber(loginIdentifier);
     user = await prisma.user.findUnique({
       where: { phoneNumber: normalizedPhone },
     });
@@ -147,7 +156,7 @@ async function login({ identifier, password }, req) {
     const remainingMinutes = Math.ceil((user.lockedUntil - new Date()) / 60000);
 
     // Ghi login history
-    await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, false, `Account locked (${remainingMinutes}min remaining)`);
+    await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, false, `Account locked (${remainingMinutes}min remaining)`, false, user.email || user.phoneNumber);
 
     throw Object.assign(
       new Error(`Account is locked. Try again in ${remainingMinutes} minute(s).`),
@@ -184,7 +193,7 @@ async function login({ identifier, password }, req) {
     });
 
     // Ghi login history
-    await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, false, 'Invalid password');
+    await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, false, 'Invalid password', false, user.email || user.phoneNumber);
 
     const remaining = config.security.maxFailedAttempts - newAttempts;
     const lockMsg = remaining > 0
@@ -249,6 +258,7 @@ async function login({ identifier, password }, req) {
 
     return {
       requireOtp: true,
+      identifier: user.email || user.phoneNumber,
       email: user.email || user.phoneNumber, // Trả về email/phone để client dùng gửi verifyOtp
       message: user.email 
         ? 'OTP has been sent to your email'
@@ -268,7 +278,7 @@ async function login({ identifier, password }, req) {
 async function verifyEmail({ email, code }) {
   // 1. Tìm user
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: email.toLowerCase().trim() },
   });
 
   if (!user) {
@@ -334,7 +344,7 @@ async function verifyEmail({ email, code }) {
  */
 async function resendEmailCode({ email }) {
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: email.toLowerCase().trim() },
   });
 
   if (!user) {
@@ -401,23 +411,29 @@ async function resendEmailCode({ email }) {
 /**
  * Xác minh OTP 2FA để hoàn tất đăng nhập
  */
-async function verifyOtp({ email, code }, req) {
+async function verifyOtp({ identifier, email, code }, req) {
   const ipAddress = getClientIP(req);
   const userAgent = req.headers['user-agent'] || 'Unknown';
-  const deviceName = parseDeviceName(userAgent);
+  const deviceName = req.body?.deviceName && req.body.deviceName.trim() !== ''
+    ? req.body.deviceName.trim()
+    : parseDeviceName(userAgent);
 
-  // Chấp nhận email làm identifier (email hoặc phone) để tương thích ngược
-  const identifier = email;
-  const isEmail = identifier.includes('@');
+  const loginIdentifier = (identifier && identifier.trim()) || (email && email.trim()) || '';
+  if (!loginIdentifier) {
+    throw Object.assign(new Error('Identifier is required'), { statusCode: 400 });
+  }
+
+  const isEmail = loginIdentifier.includes('@');
   let user;
 
   if (isEmail) {
     user = await prisma.user.findUnique({
-      where: { email: identifier.toLowerCase().trim() },
+      where: { email: loginIdentifier.toLowerCase().trim() },
     });
   } else {
+    const normalizedPhone = normalizePhoneNumber(loginIdentifier);
     user = await prisma.user.findUnique({
-      where: { phoneNumber: normalizePhoneNumber(identifier) },
+      where: { phoneNumber: normalizedPhone },
     });
   }
 
@@ -493,6 +509,10 @@ async function verifyOtp({ email, code }, req) {
 async function verifyPhone({ phoneNumber, code }) {
   const normalizedPhone = normalizePhoneNumber(phoneNumber);
 
+  if (!normalizedPhone) {
+    throw Object.assign(new Error('Invalid Vietnamese phone number format'), { statusCode: 400 });
+  }
+
   const user = await prisma.user.findUnique({
     where: { phoneNumber: normalizedPhone },
   });
@@ -551,6 +571,10 @@ async function verifyPhone({ phoneNumber, code }) {
 
 async function resendPhoneCode({ phoneNumber }) {
   const normalizedPhone = normalizePhoneNumber(phoneNumber);
+
+  if (!normalizedPhone) {
+    throw Object.assign(new Error('Invalid Vietnamese phone number format'), { statusCode: 400 });
+  }
 
   const user = await prisma.user.findUnique({
     where: { phoneNumber: normalizedPhone },
@@ -673,7 +697,7 @@ async function completeLogin(user, ipAddress, userAgent, deviceName) {
   const isSuspicious = await checkSuspiciousDevice(user.id, deviceName, ipAddress);
 
   // Ghi login history
-  await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, true, null, isSuspicious);
+  await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, true, null, isSuspicious, user.email || user.phoneNumber);
 
   // Nếu thiết bị lạ → gửi email cảnh báo
   if (isSuspicious) {
@@ -700,6 +724,7 @@ async function completeLogin(user, ipAddress, userAgent, deviceName) {
       id: user.id,
       name: user.name,
       email: user.email,
+      identifier: user.email || user.phoneNumber,
       role: user.role,
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
@@ -710,10 +735,11 @@ async function completeLogin(user, ipAddress, userAgent, deviceName) {
 /**
  * Ghi lịch sử đăng nhập
  */
-async function recordLoginHistory(userId, ipAddress, userAgent, deviceName, success, reason = null, suspicious = false) {
+async function recordLoginHistory(userId, ipAddress, userAgent, deviceName, success, reason = null, suspicious = false, email = null) {
   await prisma.loginHistory.create({
     data: {
       userId,
+      email,
       ipAddress,
       userAgent,
       deviceName,

@@ -5,9 +5,9 @@ import '../../services/auth_service.dart';
 import '../../app.dart';
 
 class OtpScreen extends StatefulWidget {
-  final String email;
+  final String identifier;
 
-  const OtpScreen({super.key, required this.email});
+  const OtpScreen({super.key, required this.identifier});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -43,7 +43,7 @@ class _OtpScreenState extends State<OtpScreen> {
       final deviceName = _getDeviceName();
       
       await authService.verifyOtp(
-        email: widget.email,
+        identifier: widget.identifier,
         code: code,
         deviceName: deviceName,
       );
@@ -119,6 +119,12 @@ class _OtpScreenState extends State<OtpScreen> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.identifier,
+                      style: const TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.w600),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),

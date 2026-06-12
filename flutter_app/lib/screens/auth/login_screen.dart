@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OtpScreen(email: result['email'] ?? identifier),
+              builder: (context) => OtpScreen(identifier: result['identifier'] ?? result['email'] ?? identifier),
             ),
           );
         } else {

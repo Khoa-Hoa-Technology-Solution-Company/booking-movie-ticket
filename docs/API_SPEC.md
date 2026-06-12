@@ -41,6 +41,7 @@ Body:
 {
   "name": "Nguyen Duc Hoang",
   "email": "hoang@example.com",
+  "phoneNumber": "0912345678",
   "password": "Password@123"
 }
 ```
@@ -49,7 +50,7 @@ Body:
 Body:
 ```json
 {
-  "email": "hoang@example.com",
+  "identifier": "hoang@example.com",
   "password": "Password@123",
   "deviceName": "Android Emulator"
 }
@@ -57,6 +58,8 @@ Body:
 
 If 2FA disabled: return tokens.  
 If 2FA enabled: return `otpRequired: true`.
+
+`identifier` can be email or Vietnamese phone number.
 
 ### POST /auth/verify-email
 Body:
@@ -75,11 +78,28 @@ Body:
 }
 ```
 
+### POST /auth/verify-phone
+Body:
+```json
+{
+  "phoneNumber": "0912345678",
+  "code": "123456"
+}
+```
+
+### POST /auth/resend-phone-code
+Body:
+```json
+{
+  "phoneNumber": "0912345678"
+}
+```
+
 ### POST /auth/verify-otp
 Body:
 ```json
 {
-  "email": "hoang@example.com",
+  "identifier": "hoang@example.com",
   "code": "123456",
   "deviceName": "Android Emulator"
 }
@@ -111,7 +131,10 @@ Protected: yes
 Expected data:
 ```json
 {
+  "hasEmail": true,
+  "hasPhoneNumber": false,
   "emailVerified": true,
+  "phoneVerified": false,
   "twoFactorEnabled": false,
   "lastLoginAt": "2026-01-01T00:00:00.000Z",
   "failedLoginAttempts": 0,
