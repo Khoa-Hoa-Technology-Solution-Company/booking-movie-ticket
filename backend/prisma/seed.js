@@ -17,7 +17,7 @@ async function main() {
       data: {
         title: 'Avengers: Doomsday',
         description: 'The Avengers must assemble once more to face their most dangerous threat yet - Doctor Doom, who wields unimaginable power that threatens to unravel the very fabric of the multiverse.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_avengers.jpg',
+        posterUrl: 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2e317a1c-f1ce-4a5f-90db-d88cc01db2d0/djyh7h2-d0dd3eb7-ade6-4245-ad14-f843b4cf7df2.png/v1/fill/w_1280,h_2027,q_80,strp/avengers_doomsday_poster_hd_2027_4k_by_mrandrew7w7_djyh7h2-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjAyNyIsInBhdGgiOiJcL2ZcLzJlMzE3YTFjLWYxY2UtNGE1Zi05MGRiLWQ4OGNjMDFkYjJkMFwvZGp5aDdoMi1kMGRkM2ViNy1hZGU2LTQyNDUtYWQxNC1mODQzYjRjZjdkZjIucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.F0tPUEt8UhfhosZKOzP0IZAPNtpsQKR-ZKR0RKiukQQ',
         trailerUrl: 'https://youtube.com/watch?v=example1',
         duration: 150,
         ageRating: 'C13',
@@ -33,7 +33,7 @@ async function main() {
       data: {
         title: 'Inside Out 3',
         description: 'Riley is now in college and encounters a whole new set of emotions as she navigates adult life, friendships, and the challenges of growing up.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_insideout3.jpg',
+        posterUrl: 'https://tse2.mm.bing.net/th/id/OIP.23N9PBfGye0SMsaYqGHX9QHaJ4?r=0&rs=1&pid=ImgDetMain&o=7&rm=3',
         duration: 105,
         ageRating: 'P',
         genre: 'Animation, Comedy, Family',
@@ -48,7 +48,7 @@ async function main() {
       data: {
         title: 'The Batman 2',
         description: 'Bruce Wayne continues his crusade against crime in Gotham City, facing a new villain who threatens to expose the dark secrets of the Wayne family.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_batman2.jpg',
+        posterUrl: 'https://tse1.mm.bing.net/th/id/OIP.iIIjvG_ZpyoZA_ex8hmwwwHaKb?r=0&rs=1&pid=ImgDetMain&o=7&rm=3',
         trailerUrl: 'https://youtube.com/watch?v=example3',
         duration: 165,
         ageRating: 'C16',
@@ -64,7 +64,7 @@ async function main() {
       data: {
         title: 'Spirited Away 2: Return to the Spirit World',
         description: 'Chihiro, now an adult, is mysteriously drawn back to the spirit world when strange events begin occurring in the real world.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_spiritedaway2.jpg',
+        posterUrl: 'https://musicart.xboxlive.com/7/aa355100-0000-0000-0000-000000000002/504/image.jpg?w=1920&h=1080',
         duration: 130,
         ageRating: 'P',
         genre: 'Animation, Fantasy, Adventure',
@@ -79,7 +79,7 @@ async function main() {
       data: {
         title: 'Fast & Furious 11',
         description: 'Dom Toretto and his family face their ultimate challenge as a global conspiracy threatens everything they have built.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_ff11.jpg',
+        posterUrl: 'https://th.bing.com/th/id/R.df69bcfaab035f431d8bc7ed1abf0b40?rik=TVbgQr0ELDnXZw&pid=ImgRaw&r=0',
         duration: 140,
         ageRating: 'C13',
         genre: 'Action, Thriller',
@@ -94,7 +94,7 @@ async function main() {
       data: {
         title: 'Doraemon: Nobita và Cuộc Phiêu Lưu Vũ Trụ',
         description: 'Nobita và nhóm bạn cùng Doraemon khám phá một hành tinh bí ẩn nơi có một nền văn minh cổ đại đang đối mặt với nguy hiểm.',
-        posterUrl: 'https://image.tmdb.org/t/p/w500/placeholder_doraemon.jpg',
+        posterUrl: 'https://i.vietgiaitri.com/2022/4/28/phim-dien-anh-doraemon-nobita-va-cuoc-chien-vu-tru-ti-hon-2021-san-sang-ra-mat-mua-he-nay-e19-6423605.png',
         duration: 100,
         ageRating: 'P',
         genre: 'Animation, Adventure, Comedy',
@@ -118,7 +118,7 @@ async function main() {
         name: 'CGV Vincom Center',
         address: '72 Lê Thánh Tôn, Quận 1',
         city: 'Hồ Chí Minh',
-        imageUrl: 'https://example.com/cgv_vincom.jpg',
+        imageUrl: 'https://citytowerbinhduong.com/wp-content/uploads/2025/10/rap-cgv-vincom-center-landmark-81-hien-dai.jpg',
       },
     }),
     prisma.cinema.create({
@@ -126,7 +126,7 @@ async function main() {
         name: 'Lotte Cinema Nowzone',
         address: '235 Nguyễn Văn Cừ, Quận 1',
         city: 'Hồ Chí Minh',
-        imageUrl: 'https://example.com/lotte_nowzone.jpg',
+        imageUrl: 'https://toplist.vn/images/800px/lotte-cinema-nowzone-1000919.jpg',
       },
     }),
     prisma.cinema.create({
@@ -134,7 +134,7 @@ async function main() {
         name: 'Galaxy Cinema Nguyễn Du',
         address: '116 Nguyễn Du, Quận 1',
         city: 'Hồ Chí Minh',
-        imageUrl: 'https://example.com/galaxy_nguyendu.jpg',
+        imageUrl: 'https://tse3.mm.bing.net/th/id/OIP.6VROMp0ml2_9LxW4zklTFwHaE8?r=0&rs=1&pid=ImgDetMain&o=7&rm=3',
       },
     }),
   ]);
@@ -171,9 +171,9 @@ async function main() {
 
   let totalSeats = 0;
   for (const room of rooms) {
-    const rows = room.totalSeats <= 60 ? ['A', 'B', 'C', 'D', 'E', 'F'] 
-                : room.totalSeats <= 80 ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-                : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const rows = room.totalSeats <= 60 ? ['A', 'B', 'C', 'D', 'E', 'F']
+      : room.totalSeats <= 80 ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const seatsPerRow = Math.ceil(room.totalSeats / rows.length);
 
     const seatsData = [];
