@@ -7,7 +7,7 @@ Engine: MySQL
 ## Enums
 Recommended Prisma enums:
 - Role: USER, ADMIN
-- VerificationCodeType: EMAIL_VERIFY, OTP_LOGIN, PASSWORD_RESET
+- VerificationCodeType: EMAIL_VERIFY, PHONE_VERIFY, OTP_LOGIN, PASSWORD_RESET
 - SecurityAlertType: NEW_DEVICE_LOGIN, MANY_FAILED_ATTEMPTS, EMAIL_NOT_VERIFIED, TWO_FACTOR_DISABLED, PASSWORD_CHANGED, ACCOUNT_LOCKED
 - Severity: LOW, MEDIUM, HIGH, CRITICAL
 - MovieStatus: ACTIVE, INACTIVE, COMING_SOON, ENDED
@@ -27,9 +27,11 @@ Purpose: store account data.
 Fields:
 - id
 - name
-- email unique
+- email nullable unique
+- phoneNumber nullable unique
 - passwordHash
 - emailVerified default false
+- phoneVerified default false
 - twoFactorEnabled default false
 - role default USER
 - failedLoginAttempts default 0
@@ -86,7 +88,7 @@ Purpose: store login attempts.
 Fields:
 - id
 - userId nullable
-- email
+- email nullable
 - ipAddress nullable
 - userAgent nullable
 - deviceName nullable

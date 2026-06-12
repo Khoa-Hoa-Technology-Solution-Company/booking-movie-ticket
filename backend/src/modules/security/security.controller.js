@@ -67,7 +67,7 @@ async function getSecurityAlerts(req, res, next) {
  */
 async function toggle2FA(req, res, next) {
   try {
-    const result = await securityService.toggle2FA(req.user.id);
+    const result = await securityService.toggle2FA(req.user.id, req.body?.enabled);
     return successResponse(res, result.message, result);
   } catch (error) {
     next(error);

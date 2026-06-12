@@ -29,7 +29,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       final data = await securityService.getDashboard();
       setState(() {
         _dashboardData = data;
-        _twoFactorEnabled = data['security']?['twoFactorEnabled'] ?? false;
+        _twoFactorEnabled = data['twoFactorEnabled'] ?? data['security']?['twoFactorEnabled'] ?? false;
       });
     } catch (e) {
       if (mounted) {
@@ -77,8 +77,8 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final security = _dashboardData?['security'];
-    final int securityScore = security?['securityScore'] ?? 50;
+    final security = _dashboardData;
+    final int securityScore = security?['securityScore'] ?? security?['security']?['securityScore'] ?? 50;
     
     Color scoreColor = Colors.redAccent;
     if (securityScore >= 75) {
@@ -87,8 +87,9 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       scoreColor = Colors.amberAccent;
     }
 
-    final lastLoginStr = security?['lastLogin'] != null
-        ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(security!['lastLogin']).toLocal())
+    final lastLoginValue = security?['lastLoginAt'] ?? security?['security']?['lastLogin'];
+    final lastLoginStr = lastLoginValue != null
+      ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(lastLoginValue).toLocal())
         : 'Chưa có dữ liệu';
 
     return Scaffold(
@@ -201,17 +202,17 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                             const SizedBox(height: 12),
                             _buildChannelStatus(
                               title: 'Địa chỉ Email',
-                              value: security?['emailVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
-                              isVerified: security?['emailVerified'] == true,
-                              hasChannel: security?['hasEmail'] == true,
+                                                  value: security?['emailVerified'] == true || security?['security']?['emailVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
+                                                  isVerified: security?['emailVerified'] == true || security?['security']?['emailVerified'] == true,
+                                                  hasChannel: security?['hasEmail'] == true || security?['security']?['hasEmail'] == true,
                               icon: Icons.email,
                             ),
                             const Divider(color: Colors.white12, height: 16),
                             _buildChannelStatus(
                               title: 'Số điện thoại',
-                              value: security?['phoneVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
-                              isVerified: security?['phoneVerified'] == true,
-                              hasChannel: security?['hasPhoneNumber'] == true,
+                                                  value: security?['phoneVerified'] == true || security?['security']?['phoneVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
+                                                  isVerified: security?['phoneVerified'] == true || security?['security']?['phoneVerified'] == true,
+                                                  hasChannel: security?['hasPhoneNumber'] == true || security?['security']?['hasPhoneNumber'] == true,
                               icon: Icons.phone,
                             ),
                           ],

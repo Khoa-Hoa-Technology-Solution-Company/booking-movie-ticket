@@ -151,16 +151,17 @@ model RefreshToken {
 /// Bảng login_history - lịch sử đăng nhập
 model LoginHistory {
   id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  ipAddress  String   @map("ip_address") @db.VarChar(45)
-  userAgent  String   @map("user_agent") @db.VarChar(500)
-  deviceName String   @map("device_name") @db.VarChar(255)
+  userId     Int?     @map("user_id")
+  email      String?  @db.VarChar(255)
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  deviceName String?  @map("device_name") @db.VarChar(255)
   success    Boolean
   reason     String?  @db.VarChar(255)
   suspicious Boolean  @default(false)
   createdAt  DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@map("login_history")

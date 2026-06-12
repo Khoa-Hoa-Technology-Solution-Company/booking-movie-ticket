@@ -110,13 +110,13 @@ class AuthService {
 
   /// Xác minh mã OTP / 2FA khi đăng nhập
   Future<Map<String, dynamic>> verifyOtp({
-    required String email,
+    required String identifier,
     required String code,
     required String deviceName,
   }) async {
     try {
       final response = await apiClient.dio.post('/auth/verify-otp', data: {
-        'email': email,
+        'identifier': identifier,
         'code': code,
         'deviceName': deviceName,
       });

@@ -28,7 +28,11 @@ async function login(req, res, next) {
 
     // Nếu cần OTP → trả status 200 với requireOtp flag
     if (result.requireOtp) {
-      return successResponse(res, result.message, { requireOtp: true });
+      return successResponse(res, result.message, {
+        requireOtp: true,
+        identifier: result.identifier,
+        email: result.email,
+      });
     }
 
     // Login thành công → trả token

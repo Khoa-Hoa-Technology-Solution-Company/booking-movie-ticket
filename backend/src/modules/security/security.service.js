@@ -49,6 +49,7 @@ async function getDashboard(userId) {
     take: 5,
     select: {
       id: true,
+      email: true,
       ipAddress: true,
       deviceName: true,
       success: true,
@@ -60,7 +61,31 @@ async function getDashboard(userId) {
   // Tính Security Score
   const { score, issues } = calculateSecurityScore(user, suspiciousLogins);
 
+  const recentAlerts = await prisma.securityAlert.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      type: true,
+      message: true,
+      severity: true,
+      read: true,
+      createdAt: true,
+    },
+  });
+
   return {
+    hasEmail: !!user.email,
+    hasPhoneNumber: !!user.phoneNumber,
+    emailVerified: user.emailVerified,
+    phoneVerified: user.phoneVerified,
+    twoFactorEnabled: user.twoFactorEnabled,
+    lastLoginAt: user.lastLoginAt,
+    failedLoginAttempts: user.failedLoginAttempts,
+    accountLocked: user.lockedUntil ? user.lockedUntil > new Date() : false,
+    securityScore: score,
+    recentAlerts,
     user: {
       id: user.id,
       name: user.name,
@@ -204,10 +229,7 @@ async function getSecurityIssues(userId) {
 
   const { issues } = calculateSecurityScore(user, suspiciousLogins);
 
-  return {
-    totalIssues: issues.length,
-    issues,
-  };
+  return issues;
 }
 
 /**
@@ -224,6 +246,7 @@ async function getLoginHistory(userId, page = 1, limit = 20) {
       take: limit,
       select: {
         id: true,
+        email: true,
         ipAddress: true,
         userAgent: true,
         deviceName: true,
@@ -285,7 +308,7 @@ async function getSecurityAlerts(userId, page = 1, limit = 20) {
 /**
  * Bật/tắt 2FA
  */
-async function toggle2FA(userId) {
+async function toggle2FA(userId, enabled) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -302,7 +325,7 @@ async function toggle2FA(userId) {
     );
   }
 
-  const newStatus = !user.twoFactorEnabled;
+  const newStatus = typeof enabled === 'boolean' ? enabled : !user.twoFactorEnabled;
 
   await prisma.user.update({
     where: { id: userId },

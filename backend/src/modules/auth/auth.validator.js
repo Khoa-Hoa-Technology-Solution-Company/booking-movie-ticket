@@ -33,7 +33,8 @@ const registerSchema = z.object({
     .max(100, 'Password must be at most 100 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
 }).refine((data) => {
   const hasEmail = data.email && data.email.trim() !== '';
   const hasPhone = data.phoneNumber && data.phoneNumber.trim() !== '';
@@ -56,11 +57,42 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   identifier: z
     .string()
-    .min(1, 'Email or phone number is required')
-    .trim(),
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .max(255)
+    .toLowerCase()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
+    .or(z.null()),
   password: z
     .string()
     .min(1, 'Password is required'),
+  deviceName: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
+}).refine((data) => {
+  const hasIdentifier = data.identifier && data.identifier.trim() !== '';
+  const hasEmail = data.email && data.email.trim() !== '';
+  return hasIdentifier || hasEmail;
+}, {
+  message: 'Identifier is required',
+  path: ['identifier'],
+}).refine((data) => {
+  const hasIdentifier = data.identifier && data.identifier.trim() !== '';
+  const hasEmail = data.email && data.email.trim() !== '';
+  return hasIdentifier || hasEmail;
+}, {
+  message: 'Email or phone number is required',
+  path: ['identifier'],
 });
 
 // --- Verify Phone ---
@@ -98,6 +130,12 @@ const verifyEmailSchema = z.object({
 
 // --- Verify OTP ---
 const verifyOtpSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
   email: z
     .string()
     .email('Invalid email address')
@@ -107,6 +145,12 @@ const verifyOtpSchema = z.object({
     .string()
     .length(6, 'OTP must be 6 digits')
     .regex(/^\d{6}$/, 'OTP must be 6 digits'),
+  deviceName: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .or(z.null()),
 });
 
 // --- Resend Email Code ---

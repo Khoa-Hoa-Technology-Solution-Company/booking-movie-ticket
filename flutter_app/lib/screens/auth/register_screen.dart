@@ -57,7 +57,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
-        if (email.isNotEmpty) {
+        if (email.isNotEmpty && phone.isNotEmpty) {
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: const Color(0xFF16162A),
+              title: const Text('Chọn bước xác minh', style: TextStyle(color: Colors.white)),
+              content: const Text(
+                'Bạn vừa đăng ký bằng cả email và số điện thoại. Chọn kênh muốn xác minh trước.',
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Để sau', style: TextStyle(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VerifyEmailScreen(email: email),
+                      ),
+                    );
+                  },
+                  child: const Text('Xác minh Email'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VerifyPhoneScreen(phoneNumber: phone),
+                      ),
+                    );
+                  },
+                  child: const Text('Xác minh SĐT'),
+                ),
+              ],
+            ),
+          );
+        } else if (email.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Xác thực Email: Mã kích hoạt đã được gửi!'),

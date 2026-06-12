@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/security_service.dart';
+import '../../services/user_service.dart';
 import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -8,11 +9,6 @@ class ProfileScreen extends StatefulWidget {
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _AppState {
-  static String name = 'Người Dùng Cinema';
-  static String email = 'cinema_user@example.com';
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -32,14 +28,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     setState(() => _isLoading = true);
     try {
+      final profile = await userService.getProfile();
       final dashboard = await securityService.getDashboard();
-      // Ta lấy tạm email từ dashboard API hoặc mock đẹp mắt vì không có API profile riêng biệt
       setState(() {
-        _name = 'Thành viên MovieApp';
-        _email = 'user@example.com'; // Default placeholder
-        _role = 'MEMBER';
-        _emailVerified = dashboard['emailVerified'] ?? false;
-        _twoFactorEnabled = dashboard['twoFactorEnabled'] ?? false;
+        _name = profile['name'] ?? 'Khách';
+        _email = profile['email'] ?? profile['phoneNumber'] ?? '';
+        _role = profile['role'] ?? 'USER';
+        _emailVerified = dashboard['security']?['emailVerified'] ?? false;
+        _twoFactorEnabled = dashboard['security']?['twoFactorEnabled'] ?? false;
       });
     } catch (_) {
       // Bỏ qua lỗi kết nối trong trang này

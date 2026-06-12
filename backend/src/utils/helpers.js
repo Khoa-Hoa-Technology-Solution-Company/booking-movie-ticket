@@ -81,8 +81,9 @@ function isStrongPassword(password) {
  */
 function isValidVietnamesePhoneNumber(phone) {
   if (!phone) return false;
+  const normalized = phone.trim().replace(/[\s.-]/g, '');
   const regex = /^(?:\+84|84|0)(3|5|7|8|9)\d{8}$/;
-  return regex.test(phone);
+  return regex.test(normalized);
 }
 
 /**
@@ -90,13 +91,17 @@ function isValidVietnamesePhoneNumber(phone) {
  */
 function normalizePhoneNumber(phone) {
   if (!phone) return null;
-  let clean = phone.replace(/\D/g, '');
-  if (clean.startsWith('0')) {
-    clean = '84' + clean.slice(1);
-  } else if (!clean.startsWith('84')) {
-    clean = '84' + clean;
+  const normalizedInput = phone.trim().replace(/[\s.-]/g, '');
+  if (/^\+84(3|5|7|8|9)\d{8}$/.test(normalizedInput)) {
+    return normalizedInput.slice(1);
   }
-  return clean;
+  if (/^84(3|5|7|8|9)\d{8}$/.test(normalizedInput)) {
+    return normalizedInput;
+  }
+  if (/^0(3|5|7|8|9)\d{8}$/.test(normalizedInput)) {
+    return `84${normalizedInput.slice(1)}`;
+  }
+  return null;
 }
 
 module.exports = {
