@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  static const String _emulatorUrl = 'http://10.0.2.2:3001/api';
-  static const String _localHostUrl = 'http://localhost:3001/api';
+  static const String _emulatorUrl = 'http://10.0.2.2:5000/api';
+  static const String _localHostUrl = 'http://localhost:5000/api';
   static const String _overrideUrl = String.fromEnvironment('API_BASE_URL');
 
   // Tự động phân tích môi trường:
