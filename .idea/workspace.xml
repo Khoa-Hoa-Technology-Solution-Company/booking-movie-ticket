@@ -4,7 +4,89 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f247f5cf-4141-46d8-b6dc-b487d1371ec3" name="Changes" comment="" />
+    <list default="true" id="f247f5cf-4141-46d8-b6dc-b487d1371ec3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/delete_unverified.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/list_users.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/migrations/20260612050551_init/migration.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/migrations/20260612080643_auth_email_phone_login/migration.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/migrations/migration_lock.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/schema.prisma" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/prisma/seed.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/app.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/config/database.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/config/email.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/config/env.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/middleware/auth.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/middleware/errorHandler.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/middleware/rateLimiter.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/auth/auth.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/auth/auth.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/auth/auth.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/auth/auth.validator.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/bookings/bookings.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/bookings/bookings.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/bookings/bookings.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/bookings/bookings.validator.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/cinemas/cinemas.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/cinemas/cinemas.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/cinemas/cinemas.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/movies/movies.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/movies/movies.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/movies/movies.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/payments/payments.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/payments/payments.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/payments/payments.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/security/security.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/security/security.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/security/security.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/showtimes/showtimes.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/showtimes/showtimes.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/showtimes/showtimes.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/users/users.controller.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/users/users.routes.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/users/users.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/modules/users/users.validator.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/services/email.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/services/token.service.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/utils/crypto.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/utils/helpers.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/app.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/app.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/config/app_config.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/config/app_config.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/core/api/api_client.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/core/api/api_exception.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/core/storage/token_storage.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/models/user.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/models/user.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/auth/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/auth/login_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/auth/register_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/auth/register_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/auth/verify_phone_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/auth/verify_phone_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/booking/booking_history_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/booking/booking_history_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/booking/seat_selection_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/booking/seat_selection_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/booking/showtime_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/booking/showtime_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/movies/home_movie_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/movies/home_movie_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/movies/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/movies/movie_detail_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/profile/profile_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/profile/profile_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/security/security_dashboard_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/security/security_dashboard_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/auth_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/booking_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/booking_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/movie_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/movie_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/security_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/security_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/user_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/user_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/test/widget_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/test/widget_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugins.cmake" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -12,6 +94,9 @@
   </component>
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1,
@@ -22,24 +107,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Flutter.main.dart.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "io.flutter.reload.alreadyRun": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/K8/DEMO",
-    "settings.editor.selected.configurable": "dart.settings",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/auth-email-phone-login&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/K8/Booking Movie Ticket&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;dart.settings&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
       <option name="filePath" value="$PROJECT_DIR$/flutter_app/lib/main.dart" />

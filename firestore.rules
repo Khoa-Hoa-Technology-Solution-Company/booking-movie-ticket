@@ -1,0 +1,109 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper rules
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Prevent users from setting role to ADMIN during registration and validate structure
+      allow create: if isAuthenticated() && isOwner(userId) && 
+        request.resource.data.role == 'USER' &&
+        request.resource.data.email is string &&
+        request.resource.data.name is string;
+        
+      // Prevent users from upgrading their role to ADMIN
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && 
+        (request.resource.data.role == resource.data.role || isAdmin()) &&
+        request.resource.data.name is string;
+        
+      allow delete: if isAdmin();
+
+      // Nested collection for verification codes/OTPs
+      match /verification_codes/{codeId} {
+        allow read, write: if isAuthenticated() && isOwner(userId) &&
+          request.resource.data.code is string &&
+          request.resource.data.expiresAt is timestamp &&
+          request.resource.data.used is bool;
+      }
+    }
+
+    // Movies, Cinemas, Showtimes, Promotions: Read by everyone, write by Admin only
+    match /movies/{movieId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /cinemas/{cinemaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /showtimes/{showtimeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promotions/{code} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Bookings collection: Disable client-side writes. Only Cloud Functions can write.
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // Booking Seats collection: Disable client-side writes. Only Cloud Functions can write.
+    match /booking_seats/{seatId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Tickets collection: Disable client-side writes. Only Cloud Functions can write.
+    match /tickets/{ticketId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // Payments collection: Disable client-side writes. Only Cloud Functions can write.
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // Security alerts and Login history: Only authenticated users can read/create their own records
+    match /security_alerts/{alertId} {
+      allow read, update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.type is string &&
+        request.resource.data.severity is string;
+    }
+
+    match /login_history/{historyId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.success is bool &&
+        request.resource.data.deviceName is string;
+      allow update, delete: if false;
+    }
+  }
+}

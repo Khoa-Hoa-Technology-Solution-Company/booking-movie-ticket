@@ -4,7 +4,7 @@ import '../../services/movie_service.dart';
 import '../../services/booking_service.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
-  final int showtimeId;
+  final String showtimeId;
 
   const SeatSelectionScreen({super.key, required this.showtimeId});
 
@@ -99,21 +99,31 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       final subtotal = _calculateSubtotal();
       final promo = _promoController.text.trim();
 
+      // Convert selected integer ids to string seatIds (e.g. 'A1', 'B5')
+      final selectedSeatCodes = _selectedSeatIds.map((id) {
+        final seat = _seats.firstWhere((s) => s['id'] == id);
+        return seat['seatId'] as String;
+      }).toList();
+
+      debugPrint('[SeatSelectionScreen] Requesting booking: showtimeId=${widget.showtimeId}, seatIds=$selectedSeatCodes');
+
       // 1. Tạo đơn đặt vé PENDING
       final bookingResult = await bookingService.createBooking(
         showtimeId: widget.showtimeId,
-        seatIds: _selectedSeatIds.toList(),
+        seatIds: selectedSeatCodes,
         promotionCode: promo.isNotEmpty ? promo : null,
       );
 
-      final int bookingId = bookingResult['bookingId'];
+      final String bookingId = bookingResult['bookingId'] as String;
       final double totalAmount = (bookingResult['totalAmount'] as num).toDouble();
+      debugPrint('[SeatSelectionScreen] Booking created successfully: ID=$bookingId, Amount=$totalAmount');
 
       if (mounted) {
         // 2. Hiển thị Dialog xác nhận thanh toán Demo
         _showPaymentConfirmationDialog(bookingId, totalAmount);
       }
     } catch (e) {
+      debugPrint('[SeatSelectionScreen] Booking creation failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Đặt vé thất bại: $e'), backgroundColor: Colors.red),
@@ -124,7 +134,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     }
   }
 
-  void _showPaymentConfirmationDialog(int bookingId, double totalAmount) {
+  void _showPaymentConfirmationDialog(String bookingId, double totalAmount) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     showDialog(
@@ -175,12 +185,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                   onPressed: isPaying ? null : () async {
                     setDialogState(() => isPaying = true);
                     try {
+                      debugPrint('[SeatSelectionScreen] Initiating payment for booking: $bookingId');
                       final result = await bookingService.confirmDemoPayment(bookingId);
+                      debugPrint('[SeatSelectionScreen] Payment successful for booking: $bookingId');
                       if (mounted) {
                         Navigator.pop(context); // Đóng dialog thanh toán
                         _showTicketDialog(result); // Hiện vé xem phim kèm mã QR
                       }
                     } catch (e) {
+                      debugPrint('[SeatSelectionScreen] Payment confirmation failed: $e');
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Thanh toán thất bại: $e'), backgroundColor: Colors.red),

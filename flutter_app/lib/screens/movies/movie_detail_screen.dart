@@ -4,7 +4,7 @@ import '../../services/movie_service.dart';
 import '../booking/seat_selection_screen.dart';
 
 class MovieDetailScreen extends StatefulWidget {
-  final int movieId;
+  final String movieId;
 
   const MovieDetailScreen({super.key, required this.movieId});
 

@@ -229,7 +229,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
   Widget _buildMovieCard(dynamic movie) {
     // Để cho đẹp mắt, nếu link poster bị lỗi ta hiển thị màu nền gradients
     final String posterUrl = movie['posterUrl'] ?? '';
-    final int movieId = movie['id'];
+    final String movieId = movie['id'];
 
     return GestureDetector(
       onTap: () {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'core/api/api_client.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/movies/home_movie_screen.dart';
 import 'screens/movies/movie_list_screen.dart';
 import 'screens/booking/booking_history_screen.dart';
@@ -16,6 +16,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   int _currentIndex = 0;
+  late final Stream<User?> _authStateStream;
 
   final List<Widget> _screens = [
     const HomeMovieScreen(),
@@ -28,12 +29,12 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    // Đăng ký callback khi Token hết hạn hoàn toàn
-    ApiClient.onSessionExpired = () {
-      if (mounted) {
+    _authStateStream = FirebaseAuth.instance.authStateChanges();
+    _authStateStream.listen((user) {
+      if (user == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
+            content: Text('Phiên đăng nhập đã hết hạn hoặc bạn đã đăng xuất.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -43,7 +44,7 @@ class _AppState extends State<App> {
           (route) => false,
         );
       }
-    };
+    });
   }
 
   @override

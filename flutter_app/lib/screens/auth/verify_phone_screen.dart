@@ -145,7 +145,7 @@ class _VerifyPhoneScreenState extends State<VerifyPhoneScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Chúng tôi đã gửi mã xác nhận 6 chữ số (vui lòng kiểm tra ở console backend) tới số điện thoại:\n${widget.phoneNumber}',
+                      'Chúng tôi đã gửi mã xác nhận 6 chữ số (vui lòng kiểm tra ở debug console) tới số điện thoại:\n${widget.phoneNumber}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),

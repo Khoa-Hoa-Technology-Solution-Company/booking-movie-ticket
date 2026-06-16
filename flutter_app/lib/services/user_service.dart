@@ -1,39 +1,71 @@
-import 'package:dio/dio.dart';
-
-import '../core/api/api_client.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
   Future<Map<String, dynamic>> getProfile() async {
-    try {
-      final response = await apiClient.dio.get('/users/profile');
-      return response.data['data']['user'] as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw apiClient.handleDioError(e);
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Người dùng chưa đăng nhập');
     }
+
+    final doc = await _db.collection('users').doc(user.uid).get();
+    if (!doc.exists) {
+      throw Exception('Không tìm thấy tài khoản người dùng.');
+    }
+    return doc.data() as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> updateProfile({required String name}) async {
-    try {
-      final response = await apiClient.dio.put('/users/profile', data: {
-        'name': name,
-      });
-      return response.data['data']['user'] as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw apiClient.handleDioError(e);
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Người dùng chưa đăng nhập');
     }
+
+    await _db.collection('users').doc(user.uid).update({
+      'name': name,
+    });
+
+    final doc = await _db.collection('users').doc(user.uid).get();
+    return doc.data() as Map<String, dynamic>;
   }
 
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('Người dùng chưa đăng nhập');
+    }
+
+    if (user.email == null) {
+      throw Exception('Không tìm thấy thông tin email.');
+    }
+
+    // Re-authenticate
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+
     try {
-      await apiClient.dio.put('/users/change-password', data: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+
+      // Create a security alert
+      await _db.collection('security_alerts').add({
+        'userId': user.uid,
+        'type': 'PASSWORD_CHANGED',
+        'message': 'Mật khẩu của bạn đã được thay đổi thành công.',
+        'severity': 'MEDIUM',
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
       });
-    } on DioException catch (e) {
-      throw apiClient.handleDioError(e);
+    } catch (e) {
+      throw Exception(e.toString().replaceAll(RegExp(r'\[.*\]\s*'), ''));
     }
   }
 }

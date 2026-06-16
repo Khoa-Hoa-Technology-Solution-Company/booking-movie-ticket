@@ -4,7 +4,7 @@ import '../../services/movie_service.dart';
 import 'seat_selection_screen.dart';
 
 class ShowtimeScreen extends StatefulWidget {
-  final int? movieId;
+  final String? movieId;
 
   const ShowtimeScreen({super.key, this.movieId});
 

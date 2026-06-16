@@ -18,7 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -36,10 +36,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
 
-    if (email.isEmpty && phone.isEmpty) {
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng nhập Email hoặc Số điện thoại để đăng ký!'),
+          content: Text('Vui lòng nhập Email để đăng ký!'),
           backgroundColor: Colors.red,
         ),
       );
@@ -75,7 +75,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: const Color(0xFF16162A),
-              title: const Text('Chọn bước xác minh', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Chọn bước xác minh',
+                style: TextStyle(color: Colors.white),
+              ),
               content: const Text(
                 'Bạn vừa đăng ký bằng cả email và số điện thoại. Chọn kênh muốn xác minh trước.',
                 style: TextStyle(color: Colors.white70),
@@ -83,7 +86,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Để sau', style: TextStyle(color: Colors.white54)),
+                  child: const Text(
+                    'Để sau',
+                    style: TextStyle(color: Colors.white54),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -103,7 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => VerifyPhoneScreen(phoneNumber: phone),
+                        builder: (context) =>
+                            VerifyPhoneScreen(phoneNumber: phone),
                       ),
                     );
                   },
@@ -128,7 +135,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Xác thực Số điện thoại: Mã kích hoạt đã được gửi!'),
+              content: Text(
+                'Xác thực Số điện thoại: Mã kích hoạt đã được gửi!',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -143,10 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -157,14 +163,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E1B4B), Color(0xFF0F0F1A)], // Dark Indigo -> Obsidian
+            colors: [
+              Color(0xFF1E1B4B),
+              Color(0xFF0F0F1A),
+            ], // Dark Indigo -> Obsidian
           ),
         ),
         child: SafeArea(
@@ -202,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    
+
                     // Name Field
                     TextFormField(
                       controller: _nameController,
@@ -210,7 +219,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Họ và tên',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.person,
+                          color: Colors.white70,
+                        ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
@@ -235,7 +247,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Email (Tùy chọn)',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.email,
+                          color: Colors.white70,
+                        ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
@@ -247,7 +262,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value != null && value.trim().isNotEmpty) {
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
                             return 'Email không đúng định dạng';
                           }
                         }
@@ -264,7 +281,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Số điện thoại (Tùy chọn)',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.phone, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.phone,
+                          color: Colors.white70,
+                        ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
@@ -276,7 +296,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value != null && value.trim().isNotEmpty) {
-                          if (!RegExp(r'^(?:\+84|84|0)(3|5|7|8|9)\d{8}$').hasMatch(value)) {
+                          if (!RegExp(
+                            r'^(?:\+84|84|0)(3|5|7|8|9)\d{8}$',
+                          ).hasMatch(value)) {
                             return 'Số điện thoại Việt Nam không hợp lệ';
                           }
                         }
@@ -293,13 +315,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Mật khẩu',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Colors.white70,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.white70,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
@@ -334,7 +363,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Xác nhận mật khẩu',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: Colors.white70,
+                        ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
@@ -366,7 +398,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ? const CircularProgressIndicator(color: Colors.black)
                           : const Text(
                               'Đăng Ký',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                     ),
                     const SizedBox(height: 24),
@@ -383,7 +418,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onTap: () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
                             );
                           },
                           child: const Text(

@@ -18,4 +18,7 @@ class AppConfig {
     }
     return _emulatorUrl;
   }
+
+  // Google OAuth 2.0 Web Client ID để Flutter lấy idToken gửi lên backend
+  static const String googleWebClientId = '275549574877-j7oiulmv5kffq6okddf673klrtqsctdr.apps.googleusercontent.com';
 }

@@ -1,0 +1,75 @@
+# ===== FLUTTER / DART =====
+
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# ===== IDE =====
+
+.idea/
+.vscode/
+*.iml
+
+# ===== ANDROID =====
+
+android/.gradle/
+android/app/build/
+android/build/
+
+# ===== IOS =====
+
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ===== MACOS =====
+
+macos/Pods/
+
+# ===== WINDOWS =====
+
+windows/flutter/ephemeral/
+
+# ===== LINUX =====
+
+linux/flutter/ephemeral/
+
+# ===== FIREBASE (QUAN TRỌNG) =====
+
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# ===== FIREBASE EMULATOR =====
+
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# ===== NODE (CLOUD FUNCTIONS) =====
+
+functions/node_modules/
+functions/.firebase/
+functions/lib/
+
+# ===== LOGS =====
+
+*.log
+
+# ===== SYSTEM =====
+
+.DS_Store
+Thumbs.db
+
+# ===== SECURITY =====
+
+*.jks
+*.keystore
+
+# ===== ENV =====
+
+.env

@@ -37,7 +37,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     }
   }
 
-  Future<void> _handlePayment(int bookingId, double totalAmount) async {
+  Future<void> _handlePayment(String bookingId, double totalAmount) async {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     
     showDialog(
@@ -63,13 +63,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   onPressed: isPaying ? null : () async {
                     setDialogState(() => isPaying = true);
                     try {
+                      debugPrint('[BookingHistoryScreen] Confirming payment for booking: $bookingId');
                       final result = await bookingService.confirmDemoPayment(bookingId);
+                      debugPrint('[BookingHistoryScreen] Payment confirmed successfully for booking: $bookingId');
                       if (mounted) {
                         Navigator.pop(context); // Đóng dialog thanh toán
                         _showTicketDialog(result);
                         _loadBookingHistory(); // Reload history
                       }
                     } catch (e) {
+                      debugPrint('[BookingHistoryScreen] Payment confirmation failed: $e');
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Thanh toán thất bại: $e'), backgroundColor: Colors.red),
@@ -90,7 +93,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  Future<void> _handleCancel(int bookingId) async {
+  Future<void> _handleCancel(String bookingId) async {
     showDialog(
       context: context,
       builder: (context) {
@@ -114,7 +117,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   onPressed: isCancelling ? null : () async {
                     setDialogState(() => isCancelling = true);
                     try {
+                      debugPrint('[BookingHistoryScreen] Requesting cancellation for booking: $bookingId');
                       await bookingService.cancelBooking(bookingId);
+                      debugPrint('[BookingHistoryScreen] Booking cancelled successfully: $bookingId');
                       if (mounted) {
                         Navigator.pop(context); // Đóng dialog
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,6 +128,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         _loadBookingHistory(); // Reload history
                       }
                     } catch (e) {
+                      debugPrint('[BookingHistoryScreen] Cancellation failed: $e');
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Hủy đặt vé thất bại: $e'), backgroundColor: Colors.red),
