@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/booking_service.dart';
+import '../../models/booking.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -11,7 +13,7 @@ class BookingHistoryScreen extends StatefulWidget {
 
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   bool _isLoading = false;
-  List<dynamic> _bookings = [];
+  List<Booking> _bookings = [];
 
   @override
   void initState() {
@@ -63,10 +65,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   onPressed: isPaying ? null : () async {
                     setDialogState(() => isPaying = true);
                     try {
-                      final result = await bookingService.confirmDemoPayment(bookingId);
+                      final confirmedBooking = await bookingService.confirmPayment(bookingId);
                       if (mounted) {
                         Navigator.pop(context); // Đóng dialog thanh toán
-                        _showTicketDialog(result);
+                        _showTicketDialog(confirmedBooking);
                         _loadBookingHistory(); // Reload history
                       }
                     } catch (e) {
@@ -143,10 +145,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  void _showTicketDialog(Map<String, dynamic> result) {
-    final ticket = result['ticket'];
-    final String ticketCode = ticket['ticketCode'] ?? '';
-    final String qrCodeUrl = ticket['qrCode'] ?? '';
+  void _showTicketDialog(Booking booking) {
+    final ticket = booking.ticket;
+    final String ticketCode = ticket?.ticketCode ?? '';
 
     showDialog(
       context: context,
@@ -168,9 +169,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   padding: const EdgeInsets.all(12),
                   height: 180,
                   width: 180,
-                  child: Image.network(
-                    qrCodeUrl,
-                    fit: BoxFit.contain,
+                  child: QrImageView(
+                    data: ticketCode,
+                    version: QrVersions.auto,
+                    size: 180.0,
+                    gapless: false,
                   ),
                 ),
               ),
@@ -223,31 +226,30 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                       itemCount: _bookings.length,
                       itemBuilder: (context, index) {
                         final booking = _bookings[index];
-                        final showtime = booking['showtime'];
-                        final movie = showtime?['movie'];
-                        final room = showtime?['room'];
-                        final cinema = room?['cinema'];
-                        final bookingSeats = booking['bookingSeats'] ?? [];
-                        final tickets = booking['tickets'] ?? [];
+                        final showtime = booking.showtime;
+                        final movie = showtime?.movie;
+                        final room = showtime?.room;
+                        final cinema = showtime?.cinema;
+                        final seats = booking.seats ?? [];
                         
-                        final double totalAmount = (booking['totalAmount'] as num).toDouble();
-                        final String movieTitle = movie?['title'] ?? 'Phim';
-                        final String cinemaName = cinema?['name'] ?? 'Rạp';
-                        final String roomName = room?['name'] ?? 'Phòng';
+                        final double totalAmount = booking.totalAmount;
+                        final String movieTitle = movie?.title ?? 'Phim';
+                        final String cinemaName = cinema?.name ?? 'Rạp';
+                        final String roomName = room?.name ?? 'Phòng';
                         final String dateStr = showtime != null 
-                            ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(showtime['startTime']).toLocal())
+                            ? DateFormat('dd/MM/yyyy HH:mm').format(showtime.startTime)
                             : '';
-                        final String seatNames = bookingSeats.map((bs) => '${bs['seat']?['row'] ?? ''}${bs['seat']?['number'] ?? ''}').join(', ');
+                        final String seatNames = seats.map((s) => '${s.row}${s.number}').join(', ');
 
                         Color statusColor = Colors.grey;
                         String statusText = 'PENDING';
-                        if (booking['status'] == 'CONFIRMED') {
+                        if (booking.status == BookingStatus.confirmed) {
                           statusColor = Colors.green;
                           statusText = 'ĐÃ THANH TOÁN';
-                        } else if (booking['status'] == 'CANCELLED') {
+                        } else if (booking.status == BookingStatus.cancelled) {
                           statusColor = Colors.red;
                           statusText = 'ĐÃ HỦY';
-                        } else if (booking['status'] == 'EXPIRED') {
+                        } else if (booking.status == BookingStatus.expired) {
                           statusColor = Colors.grey.shade700;
                           statusText = 'HẾT HẠN';
                         }
@@ -266,7 +268,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Mã đặt vé: #${booking['id']}',
+                                      'Mã đặt vé: #${booking.id}',
                                       style: const TextStyle(color: Colors.white54, fontSize: 12),
                                     ),
                                     Container(
@@ -317,16 +319,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                     ),
                                     
                                     // Actions: If Pending -> Pay / Cancel; If Confirmed -> View Ticket QR
-                                    if (booking['status'] == 'PENDING')
+                                    if (booking.status == BookingStatus.pending)
                                       Row(
                                         children: [
                                           TextButton(
-                                            onPressed: () => _handleCancel(booking['id']),
+                                            onPressed: () => _handleCancel(booking.id),
                                             child: const Text('Hủy', style: TextStyle(color: Colors.redAccent)),
                                           ),
                                           const SizedBox(width: 8),
                                           ElevatedButton(
-                                            onPressed: () => _handlePayment(booking['id'], totalAmount),
+                                            onPressed: () => _handlePayment(booking.id, totalAmount),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.green,
                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -335,13 +337,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                           ),
                                         ],
                                       )
-                                    else if (booking['status'] == 'CONFIRMED' && tickets.isNotEmpty)
+                                    else if (booking.status == BookingStatus.confirmed && booking.ticket != null)
                                       ElevatedButton.icon(
                                         onPressed: () {
-                                          _showTicketDialog({
-                                            'ticket': tickets[0],
-                                            'booking': booking,
-                                          });
+                                          _showTicketDialog(booking);
                                         },
                                         icon: const Icon(Icons.qr_code, size: 16),
                                         label: const Text('Xem Vé QR', style: TextStyle(fontSize: 12)),

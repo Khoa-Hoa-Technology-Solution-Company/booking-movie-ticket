@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/movie.dart';
+import '../../models/cinema.dart';
 import '../../services/movie_service.dart';
 import 'movie_detail_screen.dart';
 
@@ -11,8 +13,8 @@ class HomeMovieScreen extends StatefulWidget {
 
 class _HomeMovieScreenState extends State<HomeMovieScreen> {
   bool _isLoading = false;
-  List<dynamic> _nowShowing = [];
-  List<dynamic> _cinemas = [];
+  List<Movie> _nowShowing = [];
+  List<Cinema> _cinemas = [];
 
   @override
   void initState() {
@@ -226,10 +228,10 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
     );
   }
 
-  Widget _buildMovieCard(dynamic movie) {
+  Widget _buildMovieCard(Movie movie) {
     // Để cho đẹp mắt, nếu link poster bị lỗi ta hiển thị màu nền gradients
-    final String posterUrl = movie['posterUrl'] ?? '';
-    final int movieId = movie['id'];
+    final String posterUrl = movie.posterUrl ?? '';
+    final int movieId = movie.id;
 
     return GestureDetector(
       onTap: () {
@@ -274,7 +276,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              movie['title'] ?? 'Tên Phim',
+              movie.title,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -293,7 +295,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    movie['ageRating'] ?? 'P',
+                    movie.ageRating ?? 'P',
                     style: const TextStyle(color: Color(0xFFC084FC), fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -301,7 +303,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
                 const Icon(Icons.star, color: Colors.amber, size: 14),
                 const SizedBox(width: 2),
                 Text(
-                  '${movie['rating'] ?? 0.0}',
+                  '${movie.rating}',
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
@@ -312,7 +314,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
     );
   }
 
-  Widget _buildCinemaListItem(dynamic cinema) {
+  Widget _buildCinemaListItem(Cinema cinema) {
     return Card(
       color: const Color(0xFF16162A),
       margin: const EdgeInsets.only(bottom: 12),
@@ -324,13 +326,13 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
           child: const Icon(Icons.business, color: Color(0xFFC084FC)),
         ),
         title: Text(
-          cinema['name'] ?? '',
+          cinema.name,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
-            cinema['address'] ?? '',
+            cinema.address,
             style: const TextStyle(color: Colors.white54, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -343,7 +345,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            cinema['city'] ?? '',
+            cinema.city,
             style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
         ),

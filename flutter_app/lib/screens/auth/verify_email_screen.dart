@@ -145,7 +145,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Chúng tôi đã gửi mã xác nhận 6 chữ số vào địa chỉ email:\n${widget.email}',
+                      'Chúng tôi đã gửi mã xác nhận vào địa chỉ email:\n${widget.email}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),
@@ -164,9 +164,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
-                      maxLength: 6,
+                      maxLength: 8,
                       decoration: InputDecoration(
-                        labelText: 'Nhập mã 6 chữ số',
+                        labelText: 'Nhập mã xác nhận',
                         labelStyle: const TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 0),
                         counterText: '',
                         filled: true,
@@ -180,8 +180,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Vui lòng nhập mã';
                         }
-                        if (value.trim().length != 6 || int.tryParse(value) == null) {
-                          return 'Mã phải gồm 6 chữ số';
+                        final code = value.trim();
+                        if (code.length < 6 || code.length > 8 || int.tryParse(code) == null) {
+                          return 'Mã phải gồm 6 đến 8 chữ số';
                         }
                         return null;
                       },

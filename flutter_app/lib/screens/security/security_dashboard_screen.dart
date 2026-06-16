@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/security_service.dart';
+import '../../models/security.dart';
 import 'security_issues_screen.dart';
 import 'login_history_screen.dart';
 import 'security_alerts_screen.dart';
@@ -14,7 +15,7 @@ class SecurityDashboardScreen extends StatefulWidget {
 
 class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
   bool _isLoading = false;
-  Map<String, dynamic>? _dashboardData;
+  SecurityDashboard? _dashboardData;
   bool _twoFactorEnabled = false;
 
   @override
@@ -29,7 +30,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       final data = await securityService.getDashboard();
       setState(() {
         _dashboardData = data;
-        _twoFactorEnabled = data['twoFactorEnabled'] ?? data['security']?['twoFactorEnabled'] ?? false;
+        _twoFactorEnabled = data.twoFactorEnabled;
       });
     } catch (e) {
       if (mounted) {
@@ -47,7 +48,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
     try {
       final result = await securityService.toggle2FA(value);
       setState(() {
-        _twoFactorEnabled = result['twoFactorEnabled'] ?? value;
+        _twoFactorEnabled = result;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -78,7 +79,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final security = _dashboardData;
-    final int securityScore = security?['securityScore'] ?? security?['security']?['securityScore'] ?? 50;
+    final int securityScore = security?.securityScore ?? 50;
     
     Color scoreColor = Colors.redAccent;
     if (securityScore >= 75) {
@@ -87,10 +88,10 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       scoreColor = Colors.amberAccent;
     }
 
-    final lastLoginValue = security?['lastLoginAt'] ?? security?['security']?['lastLogin'];
-    final lastLoginStr = lastLoginValue != null
-      ? DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(lastLoginValue).toLocal())
-        : 'Chưa có dữ liệu';
+    final lastLoginAt = security?.lastLoginAt;
+    final lastLoginStr = lastLoginAt != null
+      ? DateFormat('dd/MM/yyyy HH:mm').format(lastLoginAt)
+      : 'Chưa có dữ liệu';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -133,6 +134,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                                   ),
                                 ),
                                 Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
                                       '$securityScore%',
@@ -157,7 +159,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                                   ? 'Tài khoản của bạn đang được bảo vệ rất tốt.'
                                   : 'Hãy khắc phục các sự cố bảo mật để bảo vệ tài khoản tốt hơn.',
                               style: const TextStyle(color: Colors.white54, fontSize: 12),
-                               textAlign: TextAlign.center,
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -177,11 +179,11 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         subtitle: const Text(
-                          'Yêu cầu nhập mã OTP gửi qua Email/SMS mỗi khi đăng nhập',
+                          'Yêu cầu nhập mã OTP gửi qua Email mỗi khi đăng nhập',
                           style: TextStyle(color: Colors.white54, fontSize: 11),
                         ),
                         activeColor: const Color(0xFFC084FC),
-                        activeTrackColor: const Color(0xFFC084FC).withOpacity(0.3),
+                        activeTrackColor: const Color(0xFFC084FC).withAlpha(76),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -202,17 +204,17 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                             const SizedBox(height: 12),
                             _buildChannelStatus(
                               title: 'Địa chỉ Email',
-                                                  value: security?['emailVerified'] == true || security?['security']?['emailVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
-                                                  isVerified: security?['emailVerified'] == true || security?['security']?['emailVerified'] == true,
-                                                  hasChannel: security?['hasEmail'] == true || security?['security']?['hasEmail'] == true,
+                              value: security?.emailVerified == true ? 'Đã xác minh' : 'Chưa xác minh',
+                              isVerified: security?.emailVerified == true,
+                              hasChannel: security?.hasEmail == true,
                               icon: Icons.email,
                             ),
                             const Divider(color: Colors.white12, height: 16),
                             _buildChannelStatus(
                               title: 'Số điện thoại',
-                                                  value: security?['phoneVerified'] == true || security?['security']?['phoneVerified'] == true ? 'Đã xác minh' : 'Chưa xác minh',
-                                                  isVerified: security?['phoneVerified'] == true || security?['security']?['phoneVerified'] == true,
-                                                  hasChannel: security?['hasPhoneNumber'] == true || security?['security']?['hasPhoneNumber'] == true,
+                              value: 'Chưa liên kết',
+                              isVerified: false,
+                              hasChannel: false,
                               icon: Icons.phone,
                             ),
                           ],

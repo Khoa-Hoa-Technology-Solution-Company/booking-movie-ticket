@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/security_service.dart';
+import '../../models/security.dart';
 
 class SecurityIssuesScreen extends StatefulWidget {
   const SecurityIssuesScreen({super.key});
@@ -10,7 +11,7 @@ class SecurityIssuesScreen extends StatefulWidget {
 
 class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
   bool _isLoading = false;
-  List<dynamic> _issues = [];
+  List<SecurityIssue> _issues = [];
 
   @override
   void initState() {
@@ -58,7 +59,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                       itemCount: _issues.length,
                       itemBuilder: (context, index) {
                         final issue = _issues[index];
-                        final String severity = issue['severity'] ?? 'LOW';
+                        final String severity = issue.severity;
                         
                         Color severityColor = Colors.blue;
                         if (severity == 'CRITICAL' || severity == 'HIGH') {
@@ -72,7 +73,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                           margin: const EdgeInsets.only(bottom: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: severityColor.withOpacity(0.3), width: 1),
+                            side: BorderSide(color: severityColor.withAlpha(76), width: 1),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -84,7 +85,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        issue['title'] ?? 'Cảnh báo bảo mật',
+                                        issue.title,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -95,7 +96,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: severityColor.withOpacity(0.15),
+                                        color: severityColor.withAlpha(38),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -111,7 +112,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  issue['description'] ?? '',
+                                  issue.description,
                                   style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                                 ),
                               ],

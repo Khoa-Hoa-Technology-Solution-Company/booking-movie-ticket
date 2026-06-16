@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/movie.dart';
 import '../../services/movie_service.dart';
 import 'movie_detail_screen.dart';
 
@@ -12,8 +13,8 @@ class MovieListScreen extends StatefulWidget {
 class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = false;
-  List<dynamic> _nowShowing = [];
-  List<dynamic> _comingSoon = [];
+  List<Movie> _nowShowing = [];
+  List<Movie> _comingSoon = [];
 
   @override
   void initState() {
@@ -80,7 +81,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildMovieGrid(List<dynamic> movies, {required bool isNowShowing}) {
+  Widget _buildMovieGrid(List<Movie> movies, {required bool isNowShowing}) {
     if (movies.isEmpty) {
       return const Center(
         child: Text(
@@ -101,8 +102,8 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
       itemCount: movies.length,
       itemBuilder: (context, index) {
         final movie = movies[index];
-        final posterUrl = movie['posterUrl'] ?? '';
-        final movieId = movie['id'];
+        final posterUrl = movie.posterUrl ?? '';
+        final movieId = movie.id;
 
         return GestureDetector(
           onTap: () {
@@ -147,7 +148,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        movie['title'] ?? '',
+                        movie.title,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -158,7 +159,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        movie['genre'] ?? '',
+                        movie.genre ?? '',
                         style: const TextStyle(color: Colors.white54, fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -172,7 +173,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
                               const Icon(Icons.access_time_filled_rounded, color: Colors.white54, size: 12),
                               const SizedBox(width: 2),
                               Text(
-                                '${movie['duration'] ?? 0}m',
+                                '${movie.duration}m',
                                 style: const TextStyle(color: Colors.white70, fontSize: 11),
                               ),
                             ],
@@ -183,7 +184,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
                                 const Icon(Icons.star, color: Colors.amber, size: 12),
                                 const SizedBox(width: 2),
                                 Text(
-                                  '${movie['rating'] ?? 0.0}',
+                                  '${movie.rating}',
                                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                                 ),
                               ],

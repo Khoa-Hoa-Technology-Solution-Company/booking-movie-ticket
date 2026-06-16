@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../models/movie.dart';
+import '../../models/showtime.dart';
 import '../../services/movie_service.dart';
 import '../booking/seat_selection_screen.dart';
 
@@ -14,8 +16,8 @@ class MovieDetailScreen extends StatefulWidget {
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool _isLoading = false;
-  Map<String, dynamic>? _movie;
-  List<dynamic> _showtimes = [];
+  Movie? _movie;
+  List<Showtime> _showtimes = [];
 
   @override
   void initState() {
@@ -27,9 +29,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final movie = await movieService.getMovieById(widget.movieId);
+      final showtimes = await movieService.getShowtimes(movieId: widget.movieId);
       setState(() {
         _movie = movie;
-        _showtimes = movie['showtimes'] ?? [];
+        _showtimes = showtimes;
       });
     } catch (e) {
       if (mounted) {
@@ -60,8 +63,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       );
     }
 
-    final posterUrl = _movie!['posterUrl'] ?? '';
-    final rating = _movie!['rating'] ?? 0.0;
+    final posterUrl = _movie!.posterUrl ?? '';
+    final rating = _movie!.rating;
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Scaffold(
@@ -85,9 +88,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ],
                     ),
                   ),
+                ),
+                Positioned.fill(
                   child: Image.network(
                     posterUrl,
-                    width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -126,7 +130,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _movie!['title'] ?? '',
+                    _movie!.title,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -151,13 +155,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          _movie!['ageRating'] ?? 'P',
+                          _movie!.ageRating ?? 'P',
                           style: const TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        '${_movie!['duration']} phút',
+                        '${_movie!.duration} phút',
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -165,7 +169,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   const SizedBox(height: 16),
 
                   Text(
-                    _movie!['genre'] ?? '',
+                    _movie!.genre ?? '',
                     style: const TextStyle(color: Color(0xFFC084FC), fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
@@ -177,31 +181,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _movie!['description'] ?? '',
+                    _movie!.description,
                     style: const TextStyle(color: Colors.white70, height: 1.4, fontSize: 14),
                   ),
                   const SizedBox(height: 20),
 
                   // Cast & Crew
-                  if (_movie!['director'] != null) ...[
+                  if (_movie!.director != null) ...[
                     RichText(
                       text: TextSpan(
                         text: 'Đạo diễn: ',
                         style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold),
                         children: [
-                          TextSpan(text: _movie!['director'], style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.normal)),
+                          TextSpan(text: _movie!.director, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.normal)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
                   ],
-                  if (_movie!['cast'] != null) ...[
+                  if (_movie!.cast != null) ...[
                     RichText(
                       text: TextSpan(
                         text: 'Diễn viên: ',
                         style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.bold),
                         children: [
-                          TextSpan(text: _movie!['cast'], style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.normal)),
+                          TextSpan(text: _movie!.cast, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.normal)),
                         ],
                       ),
                     ),
@@ -234,10 +238,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           itemCount: _showtimes.length,
                           itemBuilder: (context, index) {
                             final showtime = _showtimes[index];
-                            final startTime = DateTime.parse(showtime['startTime']).toLocal();
-                            final roomName = showtime['room']?['name'] ?? 'Phòng';
-                            final cinemaName = showtime['room']?['cinema']?['name'] ?? 'Rạp';
-                            final price = showtime['price'] ?? 0.0;
+                            final startTime = showtime.startTime;
+                            final roomName = showtime.room?.name ?? 'Phòng';
+                            final cinemaName = showtime.cinema?.name ?? 'Rạp';
+                            final price = showtime.price;
 
                             final timeStr = DateFormat('HH:mm').format(startTime);
                             final dateStr = DateFormat('dd/MM/yyyy').format(startTime);
@@ -264,7 +268,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => SeatSelectionScreen(showtimeId: showtime['id']),
+                                        builder: (context) => SeatSelectionScreen(showtimeId: showtime.id),
                                       ),
                                     );
                                   },

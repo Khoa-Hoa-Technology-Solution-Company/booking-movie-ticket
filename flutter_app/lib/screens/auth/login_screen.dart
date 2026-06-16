@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../core/api/app_exception.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
-import 'otp_screen.dart';
+import 'verify_email_screen.dart';
 import '../../app.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _identifierController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -46,44 +47,71 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final identifier = _identifierController.text.trim();
+      final email = _emailController.text.trim();
       final password = _passwordController.text;
       final deviceName = _getDeviceName();
+      const userAgent = 'Flutter Mobile App';
 
-      final result = await authService.login(
-        identifier: identifier,
+      await authService.loginWithEmail(
+        email: email,
         password: password,
         deviceName: deviceName,
+        userAgent: userAgent,
       );
 
       if (mounted) {
-        if (result['requireOtp'] == true || result['otpRequired'] == true) {
-          // Điều hướng sang màn hình nhập OTP/2FA
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Yêu cầu OTP: Mã bảo mật đã được gửi!'),
-              backgroundColor: Colors.amber,
-            ),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng nhập thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const App()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        // Điều hướng sang màn hình xác minh Email nếu chưa xác nhận
+        if (e is AuthException && e.code == 'email_not_confirmed') {
+          final email = _emailController.text.trim();
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OtpScreen(identifier: result['identifier'] ?? result['email'] ?? identifier),
+              builder: (context) => VerifyEmailScreen(email: email),
             ),
-          );
-        } else {
-          // Đăng nhập thành công trực tiếp
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đăng nhập thành công!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const App()),
           );
         }
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+
+    try {
+      await authService.loginWithGoogle();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng nhập bằng Google thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const App()),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -146,27 +174,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Identifier Field
+                    // Email Field
                     TextFormField(
-                      controller: _identifierController,
-                      keyboardType: TextInputType.text,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'Email hoặc số điện thoại',
+                        labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                        prefixIcon: const Icon(Icons.email, color: Colors.white70),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
-                        hintText: 'Nhập email hoặc số điện thoại',
+                        hintText: 'Nhập email của bạn',
                         hintStyle: const TextStyle(color: Colors.white38),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập email hoặc số điện thoại';
+                          return 'Vui lòng nhập email';
+                        }
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return 'Email không hợp lệ';
                         }
                         return null;
                       },
@@ -222,6 +254,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Đăng Nhập',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Google Login Button
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleGoogleLogin,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: Image.network(
+                        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png',
+                        height: 20,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, color: Colors.red),
+                      ),
+                      label: const Text(
+                        'Đăng nhập bằng Google',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
                     const SizedBox(height: 24),
 

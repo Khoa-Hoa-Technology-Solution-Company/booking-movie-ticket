@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'verify_email_screen.dart';
-import 'verify_phone_screen.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -15,7 +14,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
@@ -26,29 +24,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-
-    if (email.isEmpty && phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập Email hoặc Số điện thoại để đăng ký!'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     if (!_formKey.currentState!.validate()) return;
 
-    // Confirm password check on client
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,83 +45,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
       await authService.register(
-        name: _nameController.text.trim(),
-        email: email.isNotEmpty ? email : null,
-        phoneNumber: phone.isNotEmpty ? phone : null,
-        password: _passwordController.text,
+        name: name,
+        email: email,
+        password: password,
       );
 
       if (mounted) {
-        if (email.isNotEmpty && phone.isNotEmpty) {
-          await showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: const Color(0xFF16162A),
-              title: const Text('Chọn bước xác minh', style: TextStyle(color: Colors.white)),
-              content: const Text(
-                'Bạn vừa đăng ký bằng cả email và số điện thoại. Chọn kênh muốn xác minh trước.',
-                style: TextStyle(color: Colors.white70),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Để sau', style: TextStyle(color: Colors.white54)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VerifyEmailScreen(email: email),
-                      ),
-                    );
-                  },
-                  child: const Text('Xác minh Email'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VerifyPhoneScreen(phoneNumber: phone),
-                      ),
-                    );
-                  },
-                  child: const Text('Xác minh SĐT'),
-                ),
-              ],
-            ),
-          );
-        } else if (email.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Xác thực Email: Mã kích hoạt đã được gửi!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyEmailScreen(email: email),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Xác thực Số điện thoại: Mã kích hoạt đã được gửi!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyPhoneScreen(phoneNumber: phone),
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng ký thành công! Hãy xác minh email.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VerifyEmailScreen(email: email),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -164,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E1B4B), Color(0xFF0F0F1A)], // Dark Indigo -> Obsidian
+            colors: [Color(0xFF1E1B4B), Color(0xFF0F0F1A)],
           ),
         ),
         child: SafeArea(
@@ -178,11 +107,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-                    // Icon Logo Cinema
                     const Icon(
                       Icons.local_movies_rounded,
                       size: 80,
-                      color: Color(0xFFC084FC), // Glowing Purple
+                      color: Color(0xFFC084FC),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -233,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'Email (Tùy chọn)',
+                        labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.white70),
                         prefixIcon: const Icon(Icons.email, color: Colors.white70),
                         filled: true,
@@ -246,39 +174,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hintStyle: const TextStyle(color: Colors.white38),
                       ),
                       validator: (value) {
-                        if (value != null && value.trim().isNotEmpty) {
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                            return 'Email không đúng định dạng';
-                          }
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập email';
                         }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Phone Number Field
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Số điện thoại (Tùy chọn)',
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.phone, color: Colors.white70),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.08),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintText: 'Ví dụ: 0912345678',
-                        hintStyle: const TextStyle(color: Colors.white38),
-                      ),
-                      validator: (value) {
-                        if (value != null && value.trim().isNotEmpty) {
-                          if (!RegExp(r'^(?:\+84|84|0)(3|5|7|8|9)\d{8}$').hasMatch(value)) {
-                            return 'Số điện thoại Việt Nam không hợp lệ';
-                          }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                          return 'Email không đúng định dạng';
                         }
                         return null;
                       },
@@ -312,14 +212,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Vui lòng nhập mật khẩu';
                         }
-                        if (value.length < 8) {
-                          return 'Mật khẩu phải từ 8 ký tự trở lên';
-                        }
-                        if (!value.contains(RegExp(r'[A-Z]'))) {
-                          return 'Phải chứa ít nhất 1 chữ in hoa';
-                        }
-                        if (!value.contains(RegExp(r'[0-9]'))) {
-                          return 'Phải chứa ít nhất 1 chữ số';
+                        if (value.length < 6) {
+                          return 'Mật khẩu phải từ 6 ký tự trở lên';
                         }
                         return null;
                       },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/security_service.dart';
+import '../../models/security.dart';
 
 class SecurityAlertsScreen extends StatefulWidget {
   const SecurityAlertsScreen({super.key});
@@ -11,7 +12,7 @@ class SecurityAlertsScreen extends StatefulWidget {
 
 class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
   bool _isLoading = false;
-  List<dynamic> _alerts = [];
+  List<SecurityAlert> _alerts = [];
 
   @override
   void initState() {
@@ -61,10 +62,10 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
                       itemCount: _alerts.length,
                       itemBuilder: (context, index) {
                         final alert = _alerts[index];
-                        final String severity = alert['severity'] ?? 'MEDIUM';
-                        final String type = alert['type'] ?? 'ALERT';
-                        final String message = alert['message'] ?? '';
-                        final date = DateTime.parse(alert['createdAt']).toLocal();
+                        final String severity = alert.severity;
+                        final String type = alert.type;
+                        final String message = alert.message;
+                        final date = alert.createdAt;
                         final dateStr = DateFormat('dd/MM/yyyy HH:mm:ss').format(date);
 
                         Color severityColor = Colors.blue;
@@ -86,7 +87,7 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: severityColor.withOpacity(0.2), width: 1.5),
+                            side: BorderSide(color: severityColor.withAlpha(51), width: 1.5),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),

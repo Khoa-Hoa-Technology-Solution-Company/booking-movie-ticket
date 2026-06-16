@@ -1,10 +1,22 @@
-import  'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
+import 'config/supabase_config.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Khởi tạo Supabase
+  if (SupabaseConfig.url != 'YOUR_SUPABASE_URL' && SupabaseConfig.anonKey != 'YOUR_SUPABASE_ANON_KEY') {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+  } else {
+    debugPrint('⚠️ Supabase chưa được cấu hình. Vui lòng cập nhật URL và Anon Key!');
+  }
   
   // Kiểm tra trạng thái đăng nhập tự động
   final bool loggedIn = await authService.isLoggedIn();

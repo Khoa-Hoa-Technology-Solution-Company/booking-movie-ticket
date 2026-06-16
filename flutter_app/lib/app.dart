@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'core/api/api_client.dart';
 import 'screens/movies/home_movie_screen.dart';
 import 'screens/movies/movie_list_screen.dart';
 import 'screens/booking/booking_history_screen.dart';
 import 'screens/security/security_dashboard_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'services/auth_service.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -16,6 +17,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   int _currentIndex = 0;
+  StreamSubscription? _authSubscription;
 
   final List<Widget> _screens = [
     const HomeMovieScreen(),
@@ -28,13 +30,13 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    // Đăng ký callback khi Token hết hạn hoàn toàn
-    ApiClient.onSessionExpired = () {
-      if (mounted) {
+    // Đăng ký lắng nghe thay đổi trạng thái đăng nhập từ Supabase
+    _authSubscription = authService.onAuthStateChanged.listen((user) {
+      if (user == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
-            backgroundColor: Colors.red,
+            content: Text('Phiên đăng nhập đã kết thúc.'),
+            backgroundColor: Colors.amber,
           ),
         );
         Navigator.pushAndRemoveUntil(
@@ -43,7 +45,13 @@ class _AppState extends State<App> {
           (route) => false,
         );
       }
-    };
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   @override

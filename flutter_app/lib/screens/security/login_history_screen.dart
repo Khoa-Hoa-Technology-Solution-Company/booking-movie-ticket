@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/security_service.dart';
+import '../../models/security.dart';
 
 class LoginHistoryScreen extends StatefulWidget {
   const LoginHistoryScreen({super.key});
@@ -11,7 +12,7 @@ class LoginHistoryScreen extends StatefulWidget {
 
 class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
   bool _isLoading = false;
-  List<dynamic> _items = [];
+  List<LoginHistoryItem> _items = [];
   int _page = 1;
   int _totalPages = 1;
 
@@ -26,7 +27,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
     try {
       final data = await securityService.getLoginHistory(page: _page, limit: 15);
       setState(() {
-        _items = data['items'] ?? [];
+        _items = data['items'] as List<LoginHistoryItem>;
         final pagination = data['pagination'];
         if (pagination != null) {
           _totalPages = pagination['totalPages'] ?? 1;
@@ -73,11 +74,10 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                             itemCount: _items.length,
                             itemBuilder: (context, index) {
                               final item = _items[index];
-                              final bool success = item['success'] ?? false;
-                              final bool suspicious = item['suspicious'] ?? false;
+                              final bool success = item.success;
+                              final bool suspicious = item.suspicious;
                               
-                              final date = DateTime.parse(item['createdAt']).toLocal();
-                              final dateStr = DateFormat('dd/MM/yyyy HH:mm:add').format(date); // wait, HH:mm:ss is better
+                              final date = item.createdAt;
                               final dateStrFormatted = DateFormat('dd/MM/yyyy HH:mm:ss').format(date);
 
                               Color indicatorColor = success ? Colors.green : Colors.red;
@@ -102,7 +102,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                     children: [
                                       // Left indicator icon
                                       CircleAvatar(
-                                        backgroundColor: indicatorColor.withOpacity(0.1),
+                                        backgroundColor: indicatorColor.withAlpha(25),
                                         child: Icon(indicatorIcon, color: indicatorColor),
                                       ),
                                       const SizedBox(width: 16),
@@ -113,7 +113,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              item['email'] ?? item['deviceName'] ?? 'Thiết bị không rõ',
+                                              item.email ?? item.deviceName ?? 'Thiết bị không rõ',
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
@@ -122,7 +122,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              'IP: ${item['ipAddress'] ?? 'Unkown'} • ${item['userAgent'] ?? ''}',
+                                              'IP: ${item.ipAddress ?? 'Unknown'} • ${item.userAgent ?? 'Trình duyệt không rõ'}',
                                               style: const TextStyle(color: Colors.white54, fontSize: 11),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
@@ -132,10 +132,10 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                               dateStrFormatted,
                                               style: const TextStyle(color: Color(0xFFC084FC), fontSize: 11, fontWeight: FontWeight.bold),
                                             ),
-                                            if (!success && item['reason'] != null) ...[
+                                            if (!success && item.reason != null) ...[
                                               const SizedBox(height: 6),
                                               Text(
-                                                'Lý do thất bại: ${item['reason']}',
+                                                'Lý do thất bại: ${item.reason}',
                                                 style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold),
                                               ),
                                             ]

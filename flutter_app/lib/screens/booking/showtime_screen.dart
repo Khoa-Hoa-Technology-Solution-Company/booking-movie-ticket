@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../models/showtime.dart';
 import '../../services/movie_service.dart';
 import 'seat_selection_screen.dart';
 
@@ -14,7 +15,7 @@ class ShowtimeScreen extends StatefulWidget {
 
 class _ShowtimeScreenState extends State<ShowtimeScreen> {
   bool _isLoading = false;
-  List<dynamic> _showtimes = [];
+  List<Showtime> _showtimes = [];
 
   @override
   void initState() {
@@ -66,15 +67,16 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                       itemCount: _showtimes.length,
                       itemBuilder: (context, index) {
                         final showtime = _showtimes[index];
-                        final movie = showtime['movie'];
-                        final room = showtime['room'];
-                        final cinema = room?['cinema'];
-                        final price = showtime['price'] ?? 0.0;
-                        final startTime = DateTime.parse(showtime['startTime']).toLocal();
+                        final movie = showtime.movie;
+                        final room = showtime.room;
+                        final cinema = showtime.cinema;
+                        final price = showtime.price;
+                        final startTime = showtime.startTime;
 
                         final timeStr = DateFormat('HH:mm').format(startTime);
                         final dateStr = DateFormat('dd/MM/yyyy').format(startTime);
-                        final movieTitle = movie?['title'] ?? 'Phim';
+                        final movieTitle = movie?.title ?? 'Phim';
+                        final posterUrl = movie?.posterUrl;
 
                         return Card(
                           color: const Color(0xFF16162A),
@@ -89,8 +91,8 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                                   width: 50,
                                   height: 70,
                                   color: Colors.white12,
-                                  child: movie?['posterUrl'] != null
-                                      ? Image.network(movie['posterUrl'], fit: BoxFit.cover)
+                                  child: posterUrl != null
+                                      ? Image.network(posterUrl, fit: BoxFit.cover)
                                       : const Icon(Icons.movie, color: Colors.white30),
                                 ),
                               ),
@@ -101,7 +103,7 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 6.0),
                                 child: Text(
-                                  '${cinema?['name'] ?? 'Rạp'} • ${room?['name'] ?? 'Phòng'}\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
+                                  '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'}\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
                                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                                 ),
                               ),
@@ -110,7 +112,7 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => SeatSelectionScreen(showtimeId: showtime['id']),
+                                      builder: (context) => SeatSelectionScreen(showtimeId: showtime.id),
                                     ),
                                   );
                                 },
