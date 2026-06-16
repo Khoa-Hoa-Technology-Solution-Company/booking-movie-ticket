@@ -777,6 +777,57 @@ async function checkSuspiciousDevice(userId, deviceName, ipAddress) {
   return !isKnown;
 }
 
+/**
+ * Ghi nhận đăng nhập thành công qua Firebase (thiết bị lạ, lịch sử, alert)
+ */
+async function recordFirebaseLogin({ userId, deviceName, ipAddress, userAgent }) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { statusCode: 404 });
+  }
+
+  // Reset failed attempts + cập nhật lastLoginAt
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    },
+  });
+
+  // Kiểm tra thiết bị lạ
+  const isSuspicious = await checkSuspiciousDevice(user.id, deviceName, ipAddress);
+
+  // Ghi login history
+  await recordLoginHistory(user.id, ipAddress, userAgent, deviceName, true, null, isSuspicious, user.email || user.phoneNumber);
+
+  // Nếu thiết bị lạ → gửi email cảnh báo
+  if (isSuspicious) {
+    await prisma.securityAlert.create({
+      data: {
+        userId: user.id,
+        type: 'SUSPICIOUS_LOGIN',
+        message: `New login from unrecognized device: ${deviceName} (${ipAddress})`,
+        severity: 'MEDIUM',
+      },
+    });
+
+    if (user.email && config.email.enabled) {
+      try {
+        await emailService.sendSuspiciousLoginAlert(user.email, user.name, deviceName, ipAddress);
+      } catch (err) {
+        console.error('Failed to send suspicious login alert email:', err);
+      }
+    }
+  }
+
+  return { success: true };
+}
+
 module.exports = {
   register,
   login,
@@ -787,4 +838,5 @@ module.exports = {
   resendPhoneCode,
   refreshToken,
   logout,
+  recordFirebaseLogin,
 };

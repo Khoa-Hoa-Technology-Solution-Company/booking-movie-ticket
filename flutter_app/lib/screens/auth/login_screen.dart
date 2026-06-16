@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/security_service.dart';
 import 'register_screen.dart';
-import 'otp_screen.dart';
+import 'verify_email_screen.dart';
+import 'forgot_password_screen.dart';
 import '../../app.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,33 +48,67 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final identifier = _identifierController.text.trim();
+      final email = _identifierController.text.trim();
       final password = _passwordController.text;
       final deviceName = _getDeviceName();
 
-      final result = await authService.login(
-        identifier: identifier,
-        password: password,
-        deviceName: deviceName,
-      );
+      // 1. Đăng nhập bằng Firebase Auth
+      final user = await authService.login(email: email, password: password);
+      if (user == null) {
+        throw Exception('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      }
+
+      // 2. Ghi nhận đăng nhập thành công cục bộ (để lưu login history, check thiết bị lạ)
+      await securityService.recordLoginLog(deviceName);
+
+      // 3. Kiểm tra trạng thái 2FA từ local securityService
+      final dashboard = await securityService.getDashboard();
+      final bool twoFactorEnabled = dashboard['twoFactorEnabled'] ?? dashboard['security']?['twoFactorEnabled'] ?? false;
 
       if (mounted) {
-        if (result['requireOtp'] == true || result['otpRequired'] == true) {
-          // Điều hướng sang màn hình nhập OTP/2FA
+        if (twoFactorEnabled) {
+          // Kích hoạt 2FA:
+          // a. Đánh dấu phiên hiện tại chưa xác thực 2FA
+          await securityService.setTwoFactorVerified(false);
+
+          // b. Sinh mã OTP và in ra Debug Console để phục vụ môi trường demo
+          final otp = securityService.generate2FAOTP();
+          debugPrint('==================================================');
+          debugPrint('[2FA OTP] MÃ XÁC THỰC 2 LỚP CỦA BẠN LÀ: $otp');
+          debugPrint('==================================================');
+
+          bool emailSent = false;
+          try {
+            await authService.send2FASignInLink(email, otp);
+            emailSent = true;
+          } catch (e) {
+            debugPrint('[WARNING] Loi gui email qua Firebase: $e');
+            debugPrint('[WARNING] De gui email thuc te, hay bat "Email link (passwordless sign-in)" trong Firebase Console.');
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Yêu cầu OTP: Mã bảo mật đã được gửi!'),
-              backgroundColor: Colors.amber,
+            SnackBar(
+              content: Text(emailSent 
+                  ? 'Yêu cầu 2FA: Đã gửi email xác thực thành công!'
+                  : 'Yêu cầu 2FA: Không gửi được email qua Firebase. Vui lòng xem mã OTP tại Terminal/Console.'),
+              backgroundColor: emailSent ? Colors.green : Colors.amber,
+              duration: const Duration(seconds: 6),
             ),
           );
+          
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OtpScreen(identifier: result['identifier'] ?? result['email'] ?? identifier),
+              builder: (context) => VerifyEmailScreen(
+                email: email,
+                isTwoFactor: true,
+              ),
             ),
           );
         } else {
-          // Đăng nhập thành công trực tiếp
+          // Đăng nhập thành công trực tiếp (Không bật 2FA)
+          await securityService.setTwoFactorVerified(true);
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Đăng nhập thành công!'),
@@ -89,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
@@ -138,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Đăng nhập để đặt vé và bảo vệ tài khoản',
+                      'Đăng nhập qua Firebase để đặt vé và bảo vệ tài khoản',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white70,
                       ),
@@ -146,27 +182,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Identifier Field
+                    // Email Field
                     TextFormField(
                       controller: _identifierController,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'Email hoặc số điện thoại',
+                        labelText: 'Email đăng nhập',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                        prefixIcon: const Icon(Icons.email, color: Colors.white70),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.08),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
-                        hintText: 'Nhập email hoặc số điện thoại',
+                        hintText: 'Nhập email của bạn',
                         hintStyle: const TextStyle(color: Colors.white38),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Vui lòng nhập email hoặc số điện thoại';
+                          return 'Vui lòng nhập email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'Email không đúng định dạng';
                         }
                         return null;
                       },
@@ -203,7 +242,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 32),
+                    
+                    // Forgot Password link
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                          );
+                        },
+                        child: const Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(color: Color(0xFFC084FC)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     // Login Button
                     ElevatedButton(

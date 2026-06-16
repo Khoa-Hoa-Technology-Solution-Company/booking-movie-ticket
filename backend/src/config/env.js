@@ -32,6 +32,9 @@ const envSchema = z.object({
   EMAIL_CODE_EXPIRY_MINUTES: z.string().default('10'),
   OTP_EXPIRY_MINUTES: z.string().default('5'),
   RESEND_COOLDOWN_SECONDS: z.string().default('60'),
+  
+  // Firebase
+  FIREBASE_PROJECT_ID: z.string().default('booking-movie-ticket-4ff5d'),
 });
 
 // Parse và validate
@@ -77,5 +80,8 @@ module.exports = {
     emailCodeExpiryMinutes: parseInt(env.EMAIL_CODE_EXPIRY_MINUTES),
     otpExpiryMinutes: parseInt(env.OTP_EXPIRY_MINUTES),
     resendCooldownSeconds: parseInt(env.RESEND_COOLDOWN_SECONDS),
+  },
+  firebase: {
+    projectId: env.FIREBASE_PROJECT_ID,
   },
 };

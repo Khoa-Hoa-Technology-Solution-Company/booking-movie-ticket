@@ -84,4 +84,13 @@ router.post(
   authController.logout
 );
 
+const { authenticate } = require('../../middleware/auth');
+
+// POST /api/auth/record-login
+router.post(
+  '/record-login',
+  authenticate,
+  authController.recordFirebaseLogin
+);
+
 module.exports = router;

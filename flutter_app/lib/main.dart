@@ -1,14 +1,47 @@
-import  'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
+import 'services/security_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Kiểm tra trạng thái đăng nhập tự động
-  final bool loggedIn = await authService.isLoggedIn();
+  bool loggedIn = false;
+  debugPrint("[STARTUP] Khoi dong ung dung...");
+  
+  try {
+    debugPrint("[STARTUP] Dang khoi tao Firebase...");
+    await Firebase.initializeApp().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        debugPrint("[STARTUP] Firebase initialization timed out after 5s");
+        throw TimeoutException("Firebase initialization timed out");
+      },
+    );
+    debugPrint("[STARTUP] Firebase khoi tao thanh cong!");
+    
+    loggedIn = await authService.isLoggedIn();
+    if (loggedIn) {
+      final dashboard = await securityService.getDashboard();
+      final bool twoFactorEnabled = dashboard['twoFactorEnabled'] ?? false;
+      if (twoFactorEnabled) {
+        final bool twoFactorVerified = await securityService.isTwoFactorVerifiedForSession();
+        if (!twoFactorVerified) {
+          debugPrint("[STARTUP] Tai khoan bat 2FA nhung phien chua xac thuc. Yeu cau dang nhap lai.");
+          await authService.logout();
+          loggedIn = false;
+        }
+      }
+    }
+    debugPrint("[STARTUP] Kiem tra login tu dong: loggedIn = $loggedIn");
+  } catch (e) {
+    debugPrint("[STARTUP] Loi khoi tao Firebase hoac login check: $e");
+  }
 
+  debugPrint("[STARTUP] Chay runApp voi initialScreen");
   runApp(MovieApp(initialScreen: loggedIn ? const App() : const LoginScreen()));
 }
 

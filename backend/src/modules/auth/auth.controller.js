@@ -133,6 +133,30 @@ async function resendPhoneCode(req, res, next) {
   }
 }
 
+/**
+ * POST /api/auth/record-login
+ * Ghi nhận login Firebase thành công (thiết bị lạ, history, alert)
+ */
+async function recordFirebaseLogin(req, res, next) {
+  try {
+    const { getClientIP, parseDeviceName } = require('../../utils/helpers');
+    const ipAddress = getClientIP(req);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const deviceName = req.body?.deviceName || parseDeviceName(userAgent);
+
+    const result = await authService.recordFirebaseLogin({
+      userId: req.user.id,
+      deviceName,
+      ipAddress,
+      userAgent,
+    });
+
+    return successResponse(res, 'Login recorded successfully', result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -143,4 +167,5 @@ module.exports = {
   resendPhoneCode,
   refreshToken,
   logout,
+  recordFirebaseLogin,
 };
