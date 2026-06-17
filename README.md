@@ -183,4 +183,53 @@ Nếu người dùng bật **Xác thực 2 bước (2FA)** trong tab "Bảo mậ
 - **Giải pháp**: Tải tệp `google-services.json` từ phần cài đặt dự án Android của Firebase Console và đặt vào đúng thư mục: `flutter_app/android/app/google-services.json`.
 
 ### 3. Lỗi: Phiên đăng nhập không lưu hoặc 2FA đòi mã liên tục khi hot-restart
-- **Giải pháp**: Đây là hành vi bảo mật được lập trình sẵn. Mỗi khi ứng dụng bị tắt hoàn toàn hoặc hot-restart, nếu tài khoản có kích hoạt 2FA, người dùng bắt buộc phải xác nhận lại mã bảo mật để bảo vệ thông tin đặt vé và thông tin cá nhân.
+- Giải pháp: Đây là hành vi bảo mật được lập trình sẵn. Mỗi khi ứng dụng bị tắt hoàn toàn hoặc hot-restart, nếu tài khoản có kích hoạt 2FA, người dùng bắt buộc phải xác nhận lại mã bảo mật để bảo vệ thông tin đặt vé và thông tin cá nhân.
+
+---
+
+## CHI TIẾT CƠ CHẾ HOẠT ĐỘNG CỦA CÁC LUỒNG XÁC THỰC BẢO MẬT
+
+Dưới đây là chi tiết mã nguồn và sơ đồ logic xử lý của 3 luồng chức năng cốt lõi trên ứng dụng di động:
+
+### 1. Luồng Đăng ký & Xác minh Email (Register & Email Verification)
+Khi người dùng tạo tài khoản mới:
+1. Giao diện [RegisterScreen](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/screens/auth/register_screen.dart) gọi phương thức [AuthService.register](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L10) để yêu cầu đăng ký bằng email và mật khẩu qua Firebase.
+2. Firebase Authentication tạo tài khoản và trả về đối tượng `User`. 
+3. Ngay sau khi tạo thành công, hệ thống tự động kích hoạt [AuthService.sendEmailVerification](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L65) để gửi email chứa đường dẫn xác minh (Email Verification Link) của Firebase đến email người dùng.
+4. Giao diện điều hướng người dùng tới màn hình [VerifyEmailScreen](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/screens/auth/verify_email_screen.dart) ở chế độ xác minh email (`isTwoFactor = false`).
+5. Người dùng truy cập hộp thư cá nhân, bấm vào liên kết xác minh từ Firebase. Sau đó quay lại ứng dụng và bấm nút **Tôi Đã Xác Minh Qua Link**.
+6. Ứng dụng gọi [AuthService.checkEmailVerified](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L80), thực thi nạp lại thông tin bằng `user.reload()` để lấy trạng thái mới nhất từ Firebase. Nếu thuộc tính `emailVerified` của Firebase trả về `true`, người dùng sẽ được chuyển tới màn hình chính (Dashboard).
+
+---
+
+### 2. Luồng Đăng nhập & Kiểm tra Trạng thái 2FA (Login & 2FA Dispatch)
+Khi người dùng đăng nhập vào ứng dụng:
+1. Giao diện [LoginScreen](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/screens/auth/login_screen.dart) thu thập email và mật khẩu, thực thi [AuthService.login](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L37).
+2. Sau khi xác thực thông tin tài khoản thành công với Firebase, ứng dụng tiến hành ghi nhận lịch sử và kiểm tra thiết bị qua [SecurityService.recordLoginLog](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L80) (để phát hiện các thiết bị lạ đăng nhập bất thường).
+3. Ứng dụng kiểm tra cấu hình 2FA của tài khoản bằng cách gọi [SecurityService.getDashboard](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L116) để lấy trường dữ liệu `twoFactorEnabled`.
+4. **Trường hợp 2FA đang Tắt (Disabled):**
+   - Phiên làm việc được đánh dấu là hợp lệ ngay lập tức bằng lệnh [SecurityService.setTwoFactorVerified(true)](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L269).
+   - Điều hướng trực tiếp người dùng vào màn hình chính của ứng dụng.
+5. **Trường hợp 2FA đang Bật (Enabled):**
+   - Đánh dấu phiên hiện tại chưa xác thực 2FA bằng lệnh [SecurityService.setTwoFactorVerified(false)](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L269).
+   - Sinh mã xác minh OTP 6 chữ số ngẫu nhiên qua [SecurityService.generate2FAOTP](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L277) và in ra cửa sổ **Debug Console** để phục vụ việc kiểm thử nhanh trong quá trình phát triển (mã tự động hết hạn sau 5 phút).
+   - Cố gắng gửi một liên kết đăng nhập chứa mã OTP đó qua Firebase bằng [AuthService.send2FASignInLink](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L106).
+   - Điều hướng người dùng tới màn hình [VerifyEmailScreen](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/screens/auth/verify_email_screen.dart) ở chế độ xác thực 2 lớp (`isTwoFactor = true`).
+
+---
+
+### 3. Luồng Xác thực 2FA & Bảo vệ Phiên làm việc (2FA & Session Protection)
+Màn hình xác thực 2 lớp [VerifyEmailScreen](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/screens/auth/verify_email_screen.dart) chấp nhận hai phương thức nhập liệu của người dùng:
+1. **Phương thức 1: Nhập mã OTP 6 số**
+   - Người dùng nhập mã OTP được in ở Debug Console hoặc nhận từ email.
+   - Khi bấm **Xác Minh & Đăng Nhập**, ứng dụng gọi [SecurityService.verifyOTP](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L286) để so khớp mã và kiểm tra hạn sử dụng.
+2. **Phương thức 2: Dán liên kết đăng nhập (Firebase Sign-in Link)**
+   - Người dùng sao chép liên kết dạng `https://...` từ email của Firebase và dán vào ô nhập liệu.
+   - Ứng dụng kiểm tra và gọi [AuthService.verify2FALink](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L128) để Firebase tự xác thực liên kết đó.
+3. Khi một trong hai phương thức xác thực thành công:
+   - Ghi nhận trạng thái xác thực phiên làm việc bằng lệnh [SecurityService.setTwoFactorVerified(true)](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/security_service.dart#L269).
+   - Cho phép người dùng chuyển vào màn hình chính.
+4. **Bảo vệ phiên làm việc khi khởi động lại ứng dụng:**
+   - Khi người dùng tắt hẳn ứng dụng và mở lại (hoặc chạy lại ứng dụng), hàm khởi động `main()` trong [main.dart](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/main.dart#L9) sẽ kiểm tra trạng thái tự động đăng nhập (Auto-login check).
+   - Nếu phát hiện có phiên đăng nhập của Firebase (`authService.isLoggedIn() == true`) nhưng tài khoản có bật 2FA (`twoFactorEnabled == true`) và phiên hiện tại chưa được xác thực (`twoFactorVerified == false`), hệ thống sẽ lập tức gọi [AuthService.logout](file:///d:/Workspace/su26-prm393/booking-movie-ticket/flutter_app/lib/services/auth_service.dart#L95) để hủy bỏ phiên đăng nhập và buộc người dùng đăng nhập lại từ đầu. Điều này ngăn chặn việc vượt qua màn hình xác thực 2 lớp bằng cách tắt/mở lại app.
+### 4. Hướng dẫn chi tiết từ Firebase: https://firebase.google.com/docs/auth/flutter/start
