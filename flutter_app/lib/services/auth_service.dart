@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../config/supabase_config.dart';
 import '../core/api/app_exception.dart';
 import '../models/user.dart';
 
@@ -44,6 +45,17 @@ abstract class IAuthService {
 
   /// Gửi lại mã xác minh Email
   Future<void> resendEmailCode({
+    required String email,
+  });
+
+  /// Xác minh OTP 2FA khi đăng nhập
+  Future<User> verify2FA({
+    required String email,
+    required String code,
+  });
+
+  /// Gửi lại mã OTP 2FA
+  Future<void> resend2FACode({
     required String email,
   });
 }
@@ -142,34 +154,7 @@ class AuthService implements IAuthService {
     required String userAgent,
   }) async {
     try {
-      // 1. Kiểm tra xem tài khoản có bị khóa không ở bảng users
-      final userProfile = await _supabase
-          .from('users')
-          .select('locked_until, failed_login_attempts')
-          .eq('email', email)
-          .maybeSingle();
-
-      if (userProfile != null) {
-        final lockedUntilStr = userProfile['locked_until'] as String?;
-        if (lockedUntilStr != null) {
-          final lockedUntil = DateTime.parse(lockedUntilStr).toLocal();
-          if (lockedUntil.isAfter(DateTime.now())) {
-            // Ghi nhận lịch sử đăng nhập thất bại do bị khóa tài khoản
-            await _logLoginHistory(
-              email: email,
-              deviceName: deviceName,
-              userAgent: userAgent,
-              success: false,
-              reason: 'Tài khoản đang bị khóa tạm thời',
-            );
-            
-            final waitMin = lockedUntil.difference(DateTime.now()).inMinutes + 1;
-            throw AuthException('Tài khoản đã bị khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau $waitMin phút.', 'user_locked');
-          }
-        }
-      }
-
-      // 2. Thực hiện đăng nhập qua Supabase Auth
+      // 1. Thực hiện đăng nhập qua Supabase Auth trước (để lấy session của user đó)
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
@@ -180,20 +165,61 @@ class AuthService implements IAuthService {
         throw AuthException('Đăng nhập không thành công.');
       }
 
-      // 3. Reset failed login attempts & update last_login_at
+      // 2. Lấy profile (lúc này đã có session nên RLS cho phép đọc)
+      final userProfile = await _supabase
+          .from('users')
+          .select('locked_until, failed_login_attempts, two_factor_enabled')
+          .eq('id', sbUser.id)
+          .single();
+
+      // 3. Kiểm tra xem tài khoản có bị khóa không
+      final lockedUntilStr = userProfile['locked_until'] as String?;
+      if (lockedUntilStr != null) {
+        final lockedUntil = DateTime.parse(lockedUntilStr).toLocal();
+        if (lockedUntil.isAfter(DateTime.now())) {
+          // Ghi nhận lịch sử đăng nhập thất bại do bị khóa tài khoản
+          await _logLoginHistory(
+            userId: sbUser.id,
+            email: email,
+            deviceName: deviceName,
+            userAgent: userAgent,
+            success: false,
+            reason: 'Tài khoản đang bị khóa tạm thời',
+          );
+          
+          // Đăng xuất ngay lập tức
+          await _supabase.auth.signOut();
+
+          final waitMin = lockedUntil.difference(DateTime.now()).inMinutes + 1;
+          throw AuthException('Tài khoản đã bị khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau $waitMin phút.', 'user_locked');
+        }
+      }
+
+      // 4. Kiểm tra xem 2FA có được bật không
+      final is2FAEnabled = userProfile['two_factor_enabled'] == true;
+      if (is2FAEnabled) {
+        // Gửi OTP 2FA thông qua Supabase signInWithOtp
+        await _supabase.auth.signInWithOtp(email: email);
+        // Đăng xuất ngay lập tức để huỷ session vừa tạo bằng password
+        await _supabase.auth.signOut();
+        // Ném exception để UI chuyển sang Verify2FAScreen
+        throw AuthException('Yêu cầu xác thực 2 bước (2FA).', '2fa_required');
+      }
+
+      // 5. Reset failed login attempts & update last_login_at
       await _supabase.from('users').update({
         'failed_login_attempts': 0,
         'locked_until': null,
         'last_login_at': DateTime.now().toIso8601String(),
       }).eq('id', sbUser.id);
 
-      // 4. Lấy profile
+      // 6. Lấy profile đầy đủ
       final user = await _fetchUserProfile(sbUser.id);
       if (user == null) {
         throw AuthException('Không tìm thấy thông tin tài khoản người dùng.');
       }
 
-      // 5. Ghi lịch sử đăng nhập thành công
+      // 7. Ghi lịch sử đăng nhập thành công
       await _logLoginHistory(
         userId: sbUser.id,
         email: email,
@@ -298,7 +324,9 @@ class AuthService implements IAuthService {
   @override
   Future<User> loginWithGoogle() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: SupabaseConfig.googleWebClientId,
+      );
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         throw AuthException('Đăng nhập bằng Google bị hủy.');
@@ -380,6 +408,44 @@ class AuthService implements IAuthService {
         email: email,
         type: sb.OtpType.signup,
       );
+    } on sb.AuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      throw AuthException('Gửi lại mã thất bại: $e');
+    }
+  }
+
+  @override
+  Future<User> verify2FA({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: code,
+        type: sb.OtpType.email,
+      );
+      final sbUser = response.user;
+      if (sbUser == null) {
+        throw AuthException('Xác thực 2 bước không thành công.');
+      }
+      final user = await _fetchUserProfile(sbUser.id);
+      if (user == null) {
+        throw AuthException('Không tìm thấy thông tin tài khoản người dùng.');
+      }
+      return user;
+    } on sb.AuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      throw AuthException('Xác thực 2 bước thất bại: $e');
+    }
+  }
+
+  @override
+  Future<void> resend2FACode({required String email}) async {
+    try {
+      await _supabase.auth.signInWithOtp(email: email);
     } on sb.AuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {

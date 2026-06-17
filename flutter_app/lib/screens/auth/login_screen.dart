@@ -5,6 +5,7 @@ import '../../core/api/app_exception.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
 import 'verify_email_screen.dart';
+import 'verify_2fa_screen.dart';
 import '../../app.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -73,20 +74,37 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Tránh hiển thị Snackbar lỗi nếu đó là yêu cầu 2FA hoặc chưa verify email để trải nghiệm mượt mà hơn
+        final is2FARequired = e is AuthException && e.code == '2fa_required';
+        final isEmailNotConfirmed = e is AuthException && e.code == 'email_not_confirmed';
+
+        if (!is2FARequired) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
 
         // Điều hướng sang màn hình xác minh Email nếu chưa xác nhận
-        if (e is AuthException && e.code == 'email_not_confirmed') {
+        if (isEmailNotConfirmed) {
           final email = _emailController.text.trim();
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => VerifyEmailScreen(email: email),
+            ),
+          );
+        }
+
+        // Điều hướng sang màn hình xác thực 2 bước (2FA)
+        if (is2FARequired) {
+          final email = _emailController.text.trim();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Verify2FAScreen(email: email),
             ),
           );
         }
