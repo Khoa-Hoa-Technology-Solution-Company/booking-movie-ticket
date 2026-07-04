@@ -5,6 +5,7 @@ import '../../services/user_service.dart';
 import '../../models/user.dart';
 import '../../models/security.dart';
 import '../auth/login_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -423,6 +424,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 32),
 
                     // Profile Actions Menu
+                    if (_role == 'ADMIN')
+                      _buildMenuItem(
+                        icon: Icons.admin_panel_settings_rounded,
+                        title: 'Quản Lý Hệ Thống (Admin)',
+                        subtitle: 'Quản lý phim, suất chiếu, doanh thu...',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                          );
+                        },
+                      ),
                     _buildMenuItem(
                       icon: Icons.lock_reset,
                       title: 'Đổi mật khẩu',

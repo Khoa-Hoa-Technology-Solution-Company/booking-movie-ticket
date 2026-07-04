@@ -26,6 +26,12 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   final _promoController = TextEditingController();
   bool _isBooking = false;
 
+  // Trạng thái mã khuyến mãi
+  Map<String, dynamic>? _appliedPromo;
+  double _discountAmount = 0.0;
+  bool _isValidatingPromo = false;
+  String? _promoError;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +44,127 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     super.dispose();
   }
 
+  void _recalculateDiscount() {
+    if (_appliedPromo == null) return;
+    final subtotal = _calculateSubtotal();
+    final minPurchase = (_appliedPromo!['min_purchase'] as num?)?.toDouble() ?? 0.0;
+    
+    if (subtotal < minPurchase) {
+      setState(() {
+        _appliedPromo = null;
+        _discountAmount = 0.0;
+        _promoError = 'Chưa đạt giá trị đơn hàng tối thiểu để áp dụng mã';
+      });
+      return;
+    }
+
+    final discountPercent = _appliedPromo!['discount_percent'] as int;
+    final maxDiscount = (_appliedPromo!['max_discount'] as num?)?.toDouble();
+    double discount = subtotal * (discountPercent / 100);
+    if (maxDiscount != null && discount > maxDiscount) {
+      discount = maxDiscount;
+    }
+
+    setState(() {
+      _discountAmount = discount;
+    });
+  }
+
+  Future<void> _applyPromotion() async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isValidatingPromo = true;
+      _promoError = null;
+    });
+
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('promotions')
+          .select()
+          .eq('code', code)
+          .eq('active', true)
+          .maybeSingle();
+
+      if (response == null) {
+        setState(() {
+          _promoError = 'Mã khuyến mãi không tồn tại hoặc đã hết hạn';
+          _appliedPromo = null;
+          _discountAmount = 0.0;
+        });
+        return;
+      }
+
+      final startDate = DateTime.parse(response['start_date'] as String);
+      final endDate = DateTime.parse(response['end_date'] as String);
+      final now = DateTime.now();
+
+      if (now.isBefore(startDate) || now.isAfter(endDate)) {
+        setState(() {
+          _promoError = 'Mã khuyến mãi chưa có hiệu lực hoặc đã hết hạn';
+          _appliedPromo = null;
+          _discountAmount = 0.0;
+        });
+        return;
+      }
+
+      final usageLimit = response['usage_limit'] as int?;
+      final usageCount = response['usage_count'] as int? ?? 0;
+      if (usageLimit != null && usageCount >= usageLimit) {
+        setState(() {
+          _promoError = 'Mã khuyến mãi đã hết lượt sử dụng';
+          _appliedPromo = null;
+          _discountAmount = 0.0;
+        });
+        return;
+      }
+
+      final minPurchase = (response['min_purchase'] as num?)?.toDouble() ?? 0.0;
+      final subtotal = _calculateSubtotal();
+      if (subtotal < minPurchase) {
+        final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+        setState(() {
+          _promoError = 'Đơn hàng tối thiểu phải từ ${formatter.format(minPurchase)}';
+          _appliedPromo = null;
+          _discountAmount = 0.0;
+        });
+        return;
+      }
+
+      final discountPercent = response['discount_percent'] as int;
+      final maxDiscount = (response['max_discount'] as num?)?.toDouble();
+      double discount = subtotal * (discountPercent / 100);
+      if (maxDiscount != null && discount > maxDiscount) {
+        discount = maxDiscount;
+      }
+
+      setState(() {
+        _appliedPromo = response;
+        _discountAmount = discount;
+        _promoError = null;
+      });
+    } catch (e) {
+      setState(() {
+        _promoError = 'Lỗi kiểm tra mã: $e';
+        _appliedPromo = null;
+        _discountAmount = 0.0;
+      });
+    } finally {
+      setState(() => _isValidatingPromo = false);
+    }
+  }
+
+  void _removePromotion() {
+    setState(() {
+      _promoController.clear();
+      _appliedPromo = null;
+      _discountAmount = 0.0;
+      _promoError = null;
+    });
+  }
+
   Future<void> _loadSeatLayout() async {
     setState(() => _isLoading = true);
     try {
@@ -47,6 +174,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       setState(() {
         _showtimeDetail = showtimeDetail;
         _selectedSeatIds.clear();
+        _appliedPromo = null;
+        _discountAmount = 0.0;
+        _promoError = null;
       });
     } catch (e) {
       if (mounted) {
@@ -79,17 +209,66 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
   void _toggleSeat(Seat seat) {
     if (seat.status == SeatStatus.booked ||
-        seat.status == SeatStatus.maintenance)
+        seat.status == SeatStatus.maintenance) {
       return;
+    }
+
+    if (seat.status == SeatStatus.held) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ghế này đang được người khác giữ.')),
+      );
+      return;
+    }
 
     final int id = seat.id;
+    final isSelecting = !_selectedSeatIds.contains(id);
+
     setState(() {
-      if (_selectedSeatIds.contains(id)) {
-        _selectedSeatIds.remove(id);
-      } else {
+      if (isSelecting) {
         _selectedSeatIds.add(id);
+      } else {
+        _selectedSeatIds.remove(id);
       }
+      _recalculateDiscount();
     });
+
+    _syncSeatHold(seat.id, isSelecting);
+  }
+
+  Future<void> _syncSeatHold(int seatId, bool isSelecting) async {
+    final supabase = Supabase.instance.client;
+    final currentUserId = supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+
+    try {
+      if (isSelecting) {
+        await supabase.from('seat_holds').insert({
+          'seat_id': seatId,
+          'showtime_id': widget.showtimeId,
+          'user_id': currentUserId,
+        });
+      } else {
+        await supabase.from('seat_holds').delete().match({
+          'seat_id': seatId,
+          'showtime_id': widget.showtimeId,
+          'user_id': currentUserId,
+        });
+      }
+    } catch (e) {
+      if (isSelecting && mounted) {
+        setState(() {
+          _selectedSeatIds.remove(seatId);
+          _recalculateDiscount();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ghế này đã bị người khác chọn trước!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        _loadSeatLayout(); // Tải lại sơ đồ ghế mới nhất
+      }
+    }
   }
 
   Future<void> _handleBookTickets() async {
@@ -157,17 +336,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       },
     );
   }
-
   Future<void> _processBookingWithMethod(String paymentMethod) async {
     setState(() => _isBooking = true);
     try {
-      final promo = _promoController.text.trim();
+      final promo = _appliedPromo != null ? _appliedPromo!['code'] as String : null;
 
       // 1. Tạo đơn đặt vé với phương thức thanh toán đã chọn
       final booking = await bookingService.createBooking(
         showtimeId: widget.showtimeId,
         seatIds: _selectedSeatIds.toList(),
-        promotionCode: promo.isNotEmpty ? promo : null,
+        promotionCode: promo,
         paymentMethod: paymentMethod,
       );
 
@@ -861,6 +1039,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                               if (isBooked) {
                                 seatColor = const Color(0xFF1E1E2E);
                                 icon = Icons.lock_outline;
+                              } else if (seat.status == SeatStatus.held) {
+                                seatColor = Colors.orange.withOpacity(0.6);
+                                icon = Icons.person_outline;
                               } else if (isMaintenance) {
                                 seatColor = Colors.grey.shade800;
                                 icon = Icons.construction;
@@ -936,12 +1117,13 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Promo code
+                  // Promo code input & apply button
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _promoController,
+                          enabled: _appliedPromo == null,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -965,8 +1147,59 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: _isValidatingPromo
+                            ? null
+                            : (_appliedPromo != null
+                                ? _removePromotion
+                                : _applyPromotion),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _appliedPromo != null
+                              ? Colors.red.withOpacity(0.2)
+                              : const Color(0xFFC084FC).withOpacity(0.2),
+                          foregroundColor: _appliedPromo != null
+                              ? Colors.red
+                              : const Color(0xFFC084FC),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isValidatingPromo
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFFC084FC),
+                                ),
+                              )
+                            : Text(_appliedPromo != null ? 'Hủy' : 'Áp dụng'),
+                      ),
                     ],
                   ),
+                  if (_promoError != null) ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        _promoError!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                  if (_appliedPromo != null) ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'Áp dụng thành công: Giảm ${_appliedPromo!['discount_percent']}%${_appliedPromo!['max_discount'] != null ? " (Tối đa ${formatter.format(_appliedPromo!['max_discount'])})" : ""}',
+                        style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
                   // Pricing & Confirm Row
@@ -976,16 +1209,35 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Tạm tính:',
-                            style: TextStyle(
+                          if (_discountAmount > 0) ...[
+                            Text(
+                              'Tạm tính: ${formatter.format(subtotal)}',
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Khuyến mãi: -${formatter.format(_discountAmount)}',
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontSize: 11,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          Text(
+                            _discountAmount > 0 ? 'Tổng cộng:' : 'Tạm tính:',
+                            style: const TextStyle(
                               color: Colors.white54,
                               fontSize: 12,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            formatter.format(subtotal),
+                            formatter.format(subtotal - _discountAmount),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -1042,13 +1294,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _LegendItem(color: Colors.white54, label: 'Thường'),
-        SizedBox(width: 16),
+        SizedBox(width: 12),
         _LegendItem(color: Color(0xFFF97316), label: 'VIP'),
-        SizedBox(width: 16),
+        SizedBox(width: 12),
         _LegendItem(color: Color(0xFFEF4444), label: 'Ghế đôi'),
-        SizedBox(width: 16),
+        SizedBox(width: 12),
         _LegendItem(color: Color(0xFF4ADE80), label: 'Đang chọn'),
-        SizedBox(width: 16),
+        SizedBox(width: 12),
+        _LegendItem(color: Colors.orange, label: 'Đang giữ', hasIcon: true),
+        SizedBox(width: 12),
         _LegendItem(color: Color(0xFF1E1E2E), label: 'Đã đặt', hasIcon: true),
       ],
     );

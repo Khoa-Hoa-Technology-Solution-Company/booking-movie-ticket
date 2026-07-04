@@ -672,7 +672,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 const SizedBox(height: 8),
 
                                 // Cinema and Date
-                                Text('$cinemaName - $roomName', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                Text('$cinemaName - $roomName (${room?.roomType ?? '2D'})', style: const TextStyle(color: Colors.white70, fontSize: 13)),
                                 const SizedBox(height: 4),
                                 Text(dateStr, style: const TextStyle(color: Color(0xFFC084FC), fontSize: 12, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
@@ -716,17 +716,49 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                         ],
                                       )
                                     else if (booking.status == BookingStatus.confirmed && booking.ticket != null)
-                                      ElevatedButton.icon(
-                                        onPressed: () {
-                                          _showTicketDialog(booking);
+                                      Builder(
+                                        builder: (context) {
+                                          final ticket = booking.ticket!;
+                                          if (ticket.status == TicketStatus.used) {
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: Colors.white24),
+                                              ),
+                                              child: const Text(
+                                                'Vé Đã Sử Dụng',
+                                                style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
+                                              ),
+                                            );
+                                          } else if (ticket.status == TicketStatus.expired) {
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade900,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                'Vé Đã Hết Hạn',
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold),
+                                              ),
+                                            );
+                                          } else {
+                                            return ElevatedButton.icon(
+                                              onPressed: () {
+                                                _showTicketDialog(booking);
+                                              },
+                                              icon: const Icon(Icons.qr_code, size: 16),
+                                              label: const Text('Xem Vé QR', style: TextStyle(fontSize: 12)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(0xFFC084FC),
+                                                foregroundColor: Colors.black,
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              ),
+                                            );
+                                          }
                                         },
-                                        icon: const Icon(Icons.qr_code, size: 16),
-                                        label: const Text('Xem Vé QR', style: TextStyle(fontSize: 12)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFC084FC),
-                                          foregroundColor: Colors.black,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        ),
                                       ),
                                   ],
                                 ),

@@ -86,6 +86,11 @@ class BookingService implements IBookingService {
               discount = maxDiscount;
             }
             totalAmount -= discount;
+
+            // Tăng lượt sử dụng của mã khuyến mãi qua RPC bảo mật
+            await _supabase.rpc('increment_promotion_usage', params: {
+              'p_code': promotionCode,
+            });
           }
         }
       }

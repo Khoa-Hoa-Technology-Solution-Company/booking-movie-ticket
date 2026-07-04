@@ -2,7 +2,7 @@ import 'movie.dart';
 import 'cinema.dart';
 
 enum SeatType { standard, vip, couple }
-enum SeatStatus { available, maintenance, booked }
+enum SeatStatus { available, maintenance, booked, held }
 
 class Seat {
   final int id;
@@ -21,7 +21,7 @@ class Seat {
     required this.status,
   });
 
-  factory Seat.fromJson(Map<String, dynamic> json, {List<int>? bookedSeatIds}) {
+  factory Seat.fromJson(Map<String, dynamic> json, {List<int>? bookedSeatIds, List<int>? heldSeatIds}) {
     SeatType parseType(String? typeStr) {
       switch (typeStr) {
         case 'VIP': return SeatType.vip;
@@ -32,9 +32,11 @@ class Seat {
 
     final idVal = json['id'] as int;
     final isBooked = bookedSeatIds?.contains(idVal) ?? false;
+    final isHeld = heldSeatIds?.contains(idVal) ?? false;
     
     SeatStatus parseStatus(String? statusStr) {
       if (isBooked) return SeatStatus.booked;
+      if (isHeld) return SeatStatus.held;
       if (statusStr == 'MAINTENANCE') return SeatStatus.maintenance;
       return SeatStatus.available;
     }
@@ -62,9 +64,11 @@ class Seat {
               : 'STANDARD',
       'status': status == SeatStatus.booked
           ? 'BOOKED'
-          : status == SeatStatus.maintenance
-              ? 'MAINTENANCE'
-              : 'AVAILABLE',
+          : status == SeatStatus.held
+              ? 'HELD'
+              : status == SeatStatus.maintenance
+                  ? 'MAINTENANCE'
+                  : 'AVAILABLE',
     };
   }
 }

@@ -103,7 +103,7 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 6.0),
                                 child: Text(
-                                  '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'}\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
+                                  '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'} (${room?.roomType ?? '2D'})\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
                                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                                 ),
                               ),

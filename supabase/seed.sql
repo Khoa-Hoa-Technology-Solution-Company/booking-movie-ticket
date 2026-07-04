@@ -26,17 +26,17 @@ ON CONFLICT (id) DO NOTHING;
 SELECT setval('cinemas_id_seq', (SELECT MAX(id) FROM cinemas));
 
 -- 3. Rooms
-INSERT INTO rooms (id, cinema_id, name, total_seats)
+INSERT INTO rooms (id, cinema_id, name, total_seats, room_type)
 VALUES
-(1, 1, 'Room 1', 80),
-(2, 1, 'Room 2', 60),
-(3, 1, 'IMAX', 120),
-(4, 2, 'Room 1', 80),
-(5, 2, 'Room 2', 60),
-(6, 2, 'IMAX', 120),
-(7, 3, 'Room 1', 80),
-(8, 3, 'Room 2', 60),
-(9, 3, 'IMAX', 120)
+(1, 1, 'Room 1', 80, '2D'),
+(2, 1, 'Room 2', 60, '3D'),
+(3, 1, 'IMAX', 120, 'IMAX'),
+(4, 2, 'Room 1', 80, '2D'),
+(5, 2, 'Room 2', 60, '3D'),
+(6, 2, 'IMAX', 120, 'IMAX'),
+(7, 3, 'Room 1', 80, '2D'),
+(8, 3, 'Room 2', 60, '3D'),
+(9, 3, 'IMAX', 120, 'IMAX')
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset sequence for rooms

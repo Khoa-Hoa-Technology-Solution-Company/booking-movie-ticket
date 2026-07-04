@@ -156,9 +156,33 @@ class MovieService implements IMovieService {
           .map((item) => item['seat_id'] as int)
           .toList();
 
+      // 3b. Lấy các ghế đang bị giữ tạm thời bởi người khác (chưa hết hạn)
+      List<int> heldSeatIds = [];
+      try {
+        final currentUserId = _supabase.auth.currentUser?.id;
+        final nowStr = DateTime.now().toUtc().toIso8601String();
+        final holdsResponse = await _supabase
+            .from('seat_holds')
+            .select('seat_id, user_id')
+            .eq('showtime_id', id)
+            .gt('expires_at', nowStr);
+
+        heldSeatIds = (holdsResponse as List)
+            .where((item) => item['user_id'] != currentUserId)
+            .map((item) => item['seat_id'] as int)
+            .toList();
+      } catch (e) {
+        // Bỏ qua lỗi nếu bảng seat_holds chưa được khởi tạo ở local
+        print('Lỗi tải seat holds: $e');
+      }
+
       // 4. Tạo sơ đồ ghế
       final seats = (seatsResponse as List)
-          .map((json) => Seat.fromJson(json, bookedSeatIds: bookedSeatIds))
+          .map((json) => Seat.fromJson(
+                json, 
+                bookedSeatIds: bookedSeatIds,
+                heldSeatIds: heldSeatIds,
+              ))
           .toList();
 
       return ShowtimeDetail(showtime: showtime, seats: seats);
