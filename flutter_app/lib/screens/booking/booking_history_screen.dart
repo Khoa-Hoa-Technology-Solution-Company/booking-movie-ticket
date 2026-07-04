@@ -5,7 +5,9 @@ import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
-  const BookingHistoryScreen({super.key});
+  final int currentTabIndex;
+
+  const BookingHistoryScreen({super.key, required this.currentTabIndex});
 
   @override
   State<BookingHistoryScreen> createState() => _BookingHistoryScreenState();
@@ -19,6 +21,15 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   void initState() {
     super.initState();
     _loadBookingHistory();
+  }
+
+  @override
+  void didUpdateWidget(covariant BookingHistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Tự động tải lại dữ liệu khi người dùng chuyển sang tab "Vé của tôi" (tab index 2)
+    if (widget.currentTabIndex == 2 && oldWidget.currentTabIndex != 2) {
+      _loadBookingHistory();
+    }
   }
 
   Future<void> _loadBookingHistory() async {

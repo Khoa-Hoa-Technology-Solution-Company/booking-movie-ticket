@@ -19,14 +19,6 @@ class _AppState extends State<App> {
   int _currentIndex = 0;
   StreamSubscription? _authSubscription;
 
-  final List<Widget> _screens = [
-    const HomeMovieScreen(),
-    const MovieListScreen(),
-    const BookingHistoryScreen(),
-    const SecurityDashboardScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -56,11 +48,19 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      const HomeMovieScreen(),
+      const MovieListScreen(),
+      BookingHistoryScreen(currentTabIndex: _currentIndex),
+      const SecurityDashboardScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A), // Obsidian Background
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
