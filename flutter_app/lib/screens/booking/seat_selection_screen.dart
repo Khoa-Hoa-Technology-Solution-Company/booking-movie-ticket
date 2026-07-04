@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -32,14 +33,26 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   bool _isValidatingPromo = false;
   String? _promoError;
 
+  // Supabase Realtime Subscriptions
+  StreamSubscription<List<Map<String, dynamic>>>? _seatHoldsSubscription;
+  StreamSubscription<List<Map<String, dynamic>>>? _bookingsSubscription;
+
   @override
   void initState() {
     super.initState();
-    _loadSeatLayout();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _loadSeatLayout();
+    if (mounted) {
+      _subscribeToRealtime();
+    }
   }
 
   @override
   void dispose() {
+    _unsubscribeFromRealtime();
     _promoController.dispose();
     super.dispose();
   }
@@ -187,6 +200,76 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadSeatLayoutSilently() async {
+    try {
+      final showtimeDetail = await movieService.getShowtimeDetail(
+        widget.showtimeId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _showtimeDetail = showtimeDetail;
+        
+        // Lọc bỏ những ghế không còn khả dụng cho user hiện tại (đã bị người khác đặt hoặc giữ)
+        final List<int> noLongerAvailable = [];
+        for (var seatId in _selectedSeatIds) {
+          final seatIndex = showtimeDetail.seats.indexWhere((s) => s.id == seatId);
+          if (seatIndex == -1) {
+            noLongerAvailable.add(seatId);
+          } else {
+            final seat = showtimeDetail.seats[seatIndex];
+            if (seat.status == SeatStatus.booked || seat.status == SeatStatus.held || seat.status == SeatStatus.maintenance) {
+              noLongerAvailable.add(seatId);
+            }
+          }
+        }
+        
+        if (noLongerAvailable.isNotEmpty) {
+          _selectedSeatIds.removeAll(noLongerAvailable);
+          _recalculateDiscount();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Một số ghế bạn đang chọn đã bị người khác giữ hoặc thanh toán!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Lỗi cập nhật sơ đồ ghế ngầm: $e');
+    }
+  }
+
+  void _subscribeToRealtime() {
+    final supabase = Supabase.instance.client;
+    
+    // 1. Lắng nghe thay đổi trên bảng seat_holds cho showtime này
+    _seatHoldsSubscription = supabase
+        .from('seat_holds')
+        .stream(primaryKey: ['id'])
+        .eq('showtime_id', widget.showtimeId)
+        .listen((data) {
+          debugPrint('Supabase Realtime (seat_holds) fired. Total holds: ${data.length}');
+          _loadSeatLayoutSilently();
+        });
+
+    // 2. Lắng nghe thay đổi trên bảng bookings cho showtime này
+    _bookingsSubscription = supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('showtime_id', widget.showtimeId)
+        .listen((data) {
+          debugPrint('Supabase Realtime (bookings) fired. Total bookings: ${data.length}');
+          _loadSeatLayoutSilently();
+        });
+  }
+
+  void _unsubscribeFromRealtime() {
+    _seatHoldsSubscription?.cancel();
+    _seatHoldsSubscription = null;
+    _bookingsSubscription?.cancel();
+    _bookingsSubscription = null;
   }
 
   double _calculateSubtotal() {

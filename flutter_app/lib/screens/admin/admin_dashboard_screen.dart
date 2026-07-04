@@ -887,49 +887,17 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
 
     try {
       final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('tickets')
-          .select('*, bookings(*, showtimes(*, rooms(*), movies(*)), booking_seats(*, seats(*)))')
-          .eq('ticket_code', code.trim().toUpperCase())
-          .maybeSingle();
+      final response = await supabase.rpc(
+        'check_in_ticket',
+        params: {'p_ticket_code': code.trim().toUpperCase()},
+      ) as Map<String, dynamic>;
 
-      if (response == null) {
-        setState(() {
-          _statusMessage = 'Mã vé không tồn tại trên hệ thống!';
-          _isSuccess = false;
-        });
-        return;
-      }
-
-      final ticketStatus = response['status'] as String;
-
-      if (ticketStatus == 'USED') {
-        setState(() {
-          _statusMessage = 'Vé này đã được sử dụng trước đó!';
-          _isSuccess = false;
-          _ticketInfo = response;
-        });
-        return;
-      }
-
-      if (ticketStatus == 'EXPIRED' || ticketStatus == 'CANCELLED') {
-        setState(() {
-          _statusMessage = 'Vé này đã hết hạn hoặc bị hủy!';
-          _isSuccess = false;
-          _ticketInfo = response;
-        });
-        return;
-      }
-
-      // Đánh dấu vé thành USED
-      await supabase
-          .from('tickets')
-          .update({'status': 'USED'})
-          .eq('ticket_code', code.trim().toUpperCase());
+      final bool success = response['success'] == true;
+      final String message = response['message'] as String? ?? 'Lỗi không xác định';
 
       setState(() {
-        _statusMessage = 'Check-in thành công! Vé hợp lệ.';
-        _isSuccess = true;
+        _statusMessage = message;
+        _isSuccess = success;
         _ticketInfo = response;
       });
 

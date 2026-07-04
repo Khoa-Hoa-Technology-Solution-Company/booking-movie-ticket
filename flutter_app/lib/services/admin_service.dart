@@ -49,7 +49,10 @@ class AdminService implements IAdminService {
   @override
   Future<void> deleteMovie(int id) async {
     try {
-      await _supabase.from('movies').delete().eq('id', id);
+      await _supabase
+          .from('movies')
+          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('id', id);
     } catch (e) {
       throw DatabaseException('Không thể xóa phim: $e');
     }
@@ -88,7 +91,10 @@ class AdminService implements IAdminService {
   @override
   Future<void> deleteShowtime(int id) async {
     try {
-      await _supabase.from('showtimes').delete().eq('id', id);
+      await _supabase
+          .from('showtimes')
+          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('id', id);
     } catch (e) {
       throw DatabaseException('Không thể xóa suất chiếu: $e');
     }

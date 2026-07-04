@@ -38,6 +38,7 @@ class MovieService implements IMovieService {
           .from('movies')
           .select()
           .eq('status', 'NOW_SHOWING')
+          .isFilter('deleted_at', null)
           .order('release_date', ascending: false);
       
       return (response as List).map((json) => Movie.fromJson(json)).toList();
@@ -53,6 +54,7 @@ class MovieService implements IMovieService {
           .from('movies')
           .select()
           .eq('status', 'COMING_SOON')
+          .isFilter('deleted_at', null)
           .order('release_date', ascending: true);
       
       return (response as List).map((json) => Movie.fromJson(json)).toList();
@@ -68,6 +70,7 @@ class MovieService implements IMovieService {
           .from('movies')
           .select()
           .eq('id', id)
+          .isFilter('deleted_at', null)
           .single();
       
       return Movie.fromJson(response);
@@ -99,6 +102,8 @@ class MovieService implements IMovieService {
     try {
       var query = _supabase.from('showtimes').select('*, rooms(*, cinemas(*)), movies(*)');
       
+      query = query.isFilter('deleted_at', null);
+
       if (movieId != null) {
         query = query.eq('movie_id', movieId);
       }
@@ -134,6 +139,7 @@ class MovieService implements IMovieService {
           .from('showtimes')
           .select('*, rooms(*, cinemas(*)), movies(*)')
           .eq('id', id)
+          .isFilter('deleted_at', null)
           .single();
       final showtime = Showtime.fromJson(showtimeJson);
 
