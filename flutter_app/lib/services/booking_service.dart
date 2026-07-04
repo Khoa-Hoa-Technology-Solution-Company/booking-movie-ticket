@@ -8,6 +8,7 @@ abstract class IBookingService {
     required int showtimeId,
     required List<int> seatIds,
     String? promotionCode,
+    String paymentMethod = 'DEMO',
   });
 
   /// Xác nhận thanh toán Demo và kích hoạt vé
@@ -31,6 +32,7 @@ class BookingService implements IBookingService {
     required int showtimeId,
     required List<int> seatIds,
     String? promotionCode,
+    String paymentMethod = 'DEMO',
   }) async {
     try {
       final currentUserId = _supabase.auth.currentUser?.id;
@@ -75,7 +77,8 @@ class BookingService implements IBookingService {
         if (promoJson != null) {
           final discountPercent = promoJson['discount_percent'] as int;
           final maxDiscount = (promoJson['max_discount'] as num?)?.toDouble();
-          final minPurchase = (promoJson['min_purchase'] as num?)?.toDouble() ?? 0.0;
+          final minPurchase =
+              (promoJson['min_purchase'] as num?)?.toDouble() ?? 0.0;
 
           if (totalAmount >= minPurchase) {
             double discount = totalAmount * (discountPercent / 100);
@@ -88,17 +91,26 @@ class BookingService implements IBookingService {
       }
 
       // 3. Gọi RPC transaction để tạo booking an toàn ở DB
-      final bookingId = await _supabase.rpc('create_booking', params: {
-        'p_user_id': currentUserId,
-        'p_showtime_id': showtimeId,
-        'p_seat_ids': seatIds,
-        'p_total_amount': totalAmount,
-      }) as int;
+      final bookingId =
+          await _supabase.rpc(
+                'create_booking',
+                params: {
+                  'p_user_id': currentUserId,
+                  'p_showtime_id': showtimeId,
+                  'p_seat_ids': seatIds,
+                  'p_total_amount': totalAmount,
+                  'p_payment_method': paymentMethod,
+                },
+              )
+              as int;
 
       return await getBookingById(bookingId);
     } on sb.PostgrestException catch (e) {
       if (e.message.contains('seats are already booked') || e.code == '23505') {
-        throw DatabaseException('Một hoặc nhiều ghế đã được đặt.', 'SEAT_ALREADY_BOOKED');
+        throw DatabaseException(
+          'Một hoặc nhiều ghế đã được đặt.',
+          'SEAT_ALREADY_BOOKED',
+        );
       }
       throw DatabaseException('Đơn đặt vé thất bại: ${e.message}');
     } catch (e) {
@@ -110,8 +122,14 @@ class BookingService implements IBookingService {
   @override
   Future<Booking> confirmPayment(int bookingId) async {
     try {
-      await _supabase.from('bookings').update({'status': 'CONFIRMED'}).eq('id', bookingId);
-      await _supabase.from('payments').update({'status': 'PAID'}).eq('booking_id', bookingId);
+      await _supabase
+          .from('bookings')
+          .update({'status': 'CONFIRMED'})
+          .eq('id', bookingId);
+      await _supabase
+          .from('payments')
+          .update({'status': 'PAID'})
+          .eq('booking_id', bookingId);
       return await getBookingById(bookingId);
     } catch (e) {
       throw DatabaseException('Thanh toán thất bại: $e');
@@ -121,8 +139,14 @@ class BookingService implements IBookingService {
   @override
   Future<Booking> cancelBooking(int bookingId) async {
     try {
-      await _supabase.from('bookings').update({'status': 'CANCELLED'}).eq('id', bookingId);
-      await _supabase.from('payments').update({'status': 'FAILED'}).eq('booking_id', bookingId);
+      await _supabase
+          .from('bookings')
+          .update({'status': 'CANCELLED'})
+          .eq('id', bookingId);
+      await _supabase
+          .from('payments')
+          .update({'status': 'FAILED'})
+          .eq('booking_id', bookingId);
       return await getBookingById(bookingId);
     } catch (e) {
       throw DatabaseException('Không thể hủy đặt vé: $e');
@@ -139,7 +163,9 @@ class BookingService implements IBookingService {
 
       final response = await _supabase
           .from('bookings')
-          .select('*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)')
+          .select(
+            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)',
+          )
           .eq('user_id', currentUserId)
           .order('created_at', ascending: false);
 
@@ -154,7 +180,9 @@ class BookingService implements IBookingService {
     try {
       final response = await _supabase
           .from('bookings')
-          .select('*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)')
+          .select(
+            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)',
+          )
           .eq('id', id)
           .single();
 

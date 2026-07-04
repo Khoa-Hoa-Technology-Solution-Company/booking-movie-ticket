@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../config/payment_config.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 
@@ -51,20 +54,97 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   Future<void> _handlePayment(int bookingId, double totalAmount) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF16162A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Chọn Phương Thức Thanh Toán',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: const Icon(Icons.wallet, color: Color(0xFFC084FC)),
+                  title: const Text('Ví Điện Tử Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _processPaymentWithMethod(bookingId, totalAmount, 'DEMO');
+                  },
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.account_balance, color: Color(0xFFC084FC)),
+                  title: const Text('Chuyển Khoản Ngân Hàng (SePay)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _processPaymentWithMethod(bookingId, totalAmount, 'SEPAY');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _processPaymentWithMethod(int bookingId, double totalAmount, String paymentMethod) async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('payments')
+          .update({'method': paymentMethod})
+          .eq('booking_id', bookingId);
+    } catch (e) {
+      debugPrint('Lỗi cập nhật phương thức thanh toán: $e');
+    }
+
+    if (paymentMethod == 'DEMO') {
+      _showDemoPaymentConfirmationDialog(bookingId, totalAmount);
+    } else {
+      _showSePayPaymentDialog(bookingId, totalAmount);
+    }
+  }
+
+  void _showDemoPaymentConfirmationDialog(int bookingId, double totalAmount) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         bool isPaying = false;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF1E1B4B),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('Thanh Toán Vé', style: TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF16162A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: const Text('Thanh Toán Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               content: Text(
-                'Thanh toán số tiền ${formatter.format(totalAmount)} cho đặt vé #${bookingId}?',
+                'Bạn có chắc chắn muốn thanh toán số tiền ${formatter.format(totalAmount)} cho đặt vé #${bookingId} qua ví Demo?',
                 style: const TextStyle(color: Colors.white70),
               ),
               actions: [
@@ -78,9 +158,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     try {
                       final confirmedBooking = await bookingService.confirmPayment(bookingId);
                       if (mounted) {
-                        Navigator.pop(context); // Đóng dialog thanh toán
+                        Navigator.pop(context);
                         _showTicketDialog(confirmedBooking);
-                        _loadBookingHistory(); // Reload history
+                        _loadBookingHistory();
                       }
                     } catch (e) {
                       if (mounted) {
@@ -93,13 +173,300 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC084FC)),
                   child: isPaying
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                      : const Text('Xác nhận', style: TextStyle(color: Colors.black)),
+                      : const Text('Xác nhận', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
           },
         );
       },
+    );
+  }
+
+  void _showSePayPaymentDialog(int bookingId, double totalAmount) {
+    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final sepayAcc = PaymentConfig.sepayAccountNumber;
+    final sepayBank = PaymentConfig.sepayBank;
+    final sepayName = PaymentConfig.sepayAccountName;
+    final transferAmount = totalAmount.toInt();
+    final transferContent = 'SEVQR VE$bookingId';
+    final qrUrl = 'https://qr.sepay.vn/img?acc=$sepayAcc&bank=$sepayBank&amount=$transferAmount&des=$transferContent';
+
+    final supabase = Supabase.instance.client;
+    
+    final bookingStream = supabase
+        .from('bookings')
+        .stream(primaryKey: ['id'])
+        .eq('id', bookingId)
+        .listen((data) {
+          if (data.isNotEmpty) {
+            final statusStr = data.first['status'] as String;
+            if (statusStr == 'CONFIRMED' && Navigator.canPop(context)) {
+              Navigator.pop(context);
+              _loadBookingHistory();
+              bookingService.getBookingById(bookingId).then((updatedBooking) {
+                _showTicketDialog(updatedBooking);
+              });
+            }
+          }
+        });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isChecking = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF16162A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Thanh Toán SePay',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                    onPressed: () {
+                      bookingStream.cancel();
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Quét mã VietQR dưới đây để thanh toán chuyển khoản nhanh:',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        qrUrl,
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            color: Colors.white.withOpacity(0.05),
+                            child: const Center(
+                              child: CircularProgressIndicator(color: Color(0xFFC084FC)),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            color: Colors.red.withOpacity(0.1),
+                            child: const Center(
+                              child: Icon(Icons.broken_image, color: Colors.red, size: 40),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTransferInfoRow(
+                      context, 
+                      'Ngân hàng', 
+                      sepayBank,
+                      isCopyable: false,
+                    ),
+                    _buildTransferInfoRow(
+                      context, 
+                      'Số tài khoản', 
+                      sepayAcc,
+                      isCopyable: true,
+                    ),
+                    _buildTransferInfoRow(
+                      context, 
+                      'Tên tài khoản', 
+                      sepayName,
+                      isCopyable: false,
+                    ),
+                    _buildTransferInfoRow(
+                      context, 
+                      'Số tiền', 
+                      formatter.format(totalAmount),
+                      isCopyable: true,
+                      copyValue: transferAmount.toString(),
+                      valueColor: Colors.greenAccent,
+                    ),
+                    _buildTransferInfoRow(
+                      context, 
+                      'Nội dung', 
+                      transferContent,
+                      isCopyable: true,
+                      valueColor: const Color(0xFFC084FC),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFC084FC),
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isChecking 
+                              ? 'Đang kiểm tra hệ thống...' 
+                              : 'Đang chờ hệ thống tự động xác nhận chuyển khoản...',
+                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    bookingStream.cancel();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Hủy / Đóng', style: TextStyle(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  onPressed: isChecking
+                      ? null
+                      : () async {
+                          setDialogState(() => isChecking = true);
+                          try {
+                            final updated = await bookingService.getBookingById(bookingId);
+                            if (updated.status == BookingStatus.confirmed) {
+                              bookingStream.cancel();
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                _loadBookingHistory();
+                                _showTicketDialog(updated);
+                              }
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Hệ thống chưa nhận được thanh toán. Vui lòng kiểm tra lại sau ít phút.'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Lỗi khi kiểm tra: $e'), backgroundColor: Colors.red),
+                              );
+                            }
+                          } finally {
+                            setDialogState(() => isChecking = false);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC084FC),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isChecking
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+                        )
+                      : const Text('Tôi Đã Chuyển Khoản', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((_) {
+      bookingStream.cancel();
+    });
+  }
+
+  Widget _buildTransferInfoRow(
+    BuildContext context, 
+    String label, 
+    String value, {
+    required bool isCopyable,
+    String? copyValue,
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    value,
+                    style: TextStyle(
+                      color: valueColor ?? Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (isCopyable)
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: copyValue ?? value));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã sao chép $label vào bộ nhớ tạm!'),
+                          duration: const Duration(seconds: 1),
+                          backgroundColor: const Color(0xFFC084FC),
+                        ),
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 8.0),
+                      child: Icon(
+                        Icons.copy,
+                        color: Color(0xFFC084FC),
+                        size: 16,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
