@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/movie.dart';
 import '../../services/movie_service.dart';
 import 'movie_detail_screen.dart';
@@ -52,17 +54,19 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Danh Sách Phim', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
-        elevation: 0,
-        centerTitle: true,
+        title: Text('Danh Sách Phim', style: AppTextStyles.titleSmall),
+        backgroundColor: AppColors.surface,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFFC084FC),
-          labelColor: const Color(0xFFC084FC),
-          unselectedLabelColor: Colors.white54,
+          indicatorColor: AppColors.primary,
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.label,
+          labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
+          unselectedLabelStyle: GoogleFonts.outfit(fontWeight: FontWeight.normal, fontSize: 14),
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textMuted,
           tabs: const [
             Tab(text: 'Đang chiếu'),
             Tab(text: 'Sắp chiếu'),
@@ -70,7 +74,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? _buildShimmerGrid()
           : TabBarView(
               controller: _tabController,
               children: [
@@ -81,124 +85,154 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
     );
   }
 
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(AppSpacing.base),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, childAspectRatio: 0.62,
+        crossAxisSpacing: 14, mainAxisSpacing: 14,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, i) => ShimmerBox(width: double.infinity, height: double.infinity, radius: AppRadius.card),
+    );
+  }
+
   Widget _buildMovieGrid(List<Movie> movies, {required bool isNowShowing}) {
     if (movies.isEmpty) {
-      return const Center(
-        child: Text(
-          'Không có phim nào để hiển thị.',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.movie_filter_outlined, size: 64, color: AppColors.textMuted),
+            const SizedBox(height: 12),
+            Text('Không có phim nào', style: AppTextStyles.body),
+          ],
         ),
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+    return RefreshIndicator(
+      onRefresh: _loadMovies,
+      color: AppColors.primary,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(AppSpacing.base),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, childAspectRatio: 0.62,
+          crossAxisSpacing: 14, mainAxisSpacing: 14,
+        ),
+        itemCount: movies.length,
+        itemBuilder: (context, i) => _MovieGridCard(movie: movies[i], isNowShowing: isNowShowing),
       ),
-      itemCount: movies.length,
-      itemBuilder: (context, index) {
-        final movie = movies[index];
-        final posterUrl = movie.posterUrl ?? '';
-        final movieId = movie.id;
+    );
+  }
+}
 
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MovieDetailScreen(movieId: movieId),
-              ),
-            );
-          },
-          child: Card(
-            color: const Color(0xFF16162A),
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Image.network(
-                    posterUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
+class _MovieGridCard extends StatelessWidget {
+  final Movie movie;
+  final bool isNowShowing;
+  const _MovieGridCard({required this.movie, required this.isNowShowing});
+
+  @override
+  Widget build(BuildContext context) {
+    final posterUrl = movie.posterUrl ?? '';
+    return GestureDetector(
+      onTap: () => Navigator.push(context, _pageSlide(MovieDetailScreen(movieId: movie.id))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Container(
+          color: AppColors.surface,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Poster
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(color: AppColors.surfaceHigh),
+                    if (posterUrl.isNotEmpty)
+                      Image.network(posterUrl, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft, end: Alignment.bottomRight,
+                              colors: [Color(0xFF1E1B4B), Colors.black],
+                            ),
+                          ),
+                          child: const Center(child: Icon(Icons.movie_rounded, size: 42, color: AppColors.textMuted)),
+                        ),
+                      ),
+                    // Gradient bottom
+                    Positioned.fill(
+                      child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.deepPurple.shade900, Colors.black],
+                            colors: [Colors.transparent, Colors.black.withOpacity(0.5)],
+                            stops: const [0.6, 1.0],
                           ),
                         ),
-                        child: const Center(
-                          child: Icon(Icons.movie_rounded, size: 50, color: Colors.white30),
+                      ),
+                    ),
+                    // Age rating
+                    Positioned(
+                      top: 8, left: 8,
+                      child: AppBadge(label: movie.ageRating ?? 'P'),
+                    ),
+                    // Status badge for coming soon
+                    if (!isNowShowing)
+                      Positioned(
+                        bottom: 8, right: 8,
+                        child: AppBadge(
+                          label: 'Sắp chiếu',
+                          color: AppColors.accent.withOpacity(0.15),
+                          textColor: AppColors.accent,
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        movie.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        movie.genre ?? '',
-                        style: const TextStyle(color: Colors.white54, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.access_time_filled_rounded, color: Colors.white54, size: 12),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${movie.duration}m',
-                                style: const TextStyle(color: Colors.white70, fontSize: 11),
-                              ),
-                            ],
-                          ),
-                          if (isNowShowing)
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 12),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '${movie.rating}',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                ),
-                              ],
-                            ),
+              ),
+              // Info
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(movie.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.bodyBold),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time_rounded, size: 11, color: AppColors.textMuted),
+                        const SizedBox(width: 3),
+                        Text('${movie.duration}p', style: AppTextStyles.caption),
+                        if (isNowShowing) ...[
+                          const Spacer(),
+                          const Icon(Icons.star_rounded, size: 12, color: AppColors.accent),
+                          const SizedBox(width: 2),
+                          Text('${movie.rating}', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                         ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+}
+
+PageRoute _pageSlide(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (_, __, ___) => page,
+    transitionsBuilder: (_, animation, __, child) => SlideTransition(
+      position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+          .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+      child: child,
+    ),
+    transitionDuration: const Duration(milliseconds: 280),
+  );
 }

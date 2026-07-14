@@ -9,8 +9,11 @@ abstract class IAdminService {
 
   // Room & Showtime
   Future<List<Map<String, dynamic>>> getRooms();
+  Future<List<Map<String, dynamic>>> getSeatsByRoom(int roomId);
+  Future<void> updateRoomLayout(int roomId, int totalRows, int totalColumns, List<Map<String, dynamic>> seats);
   Future<void> addShowtime(Map<String, dynamic> showtimeData);
   Future<void> deleteShowtime(int id);
+  Future<void> autoGenerateShowtimes(int days);
 
   // Analytics
   Future<Map<String, dynamic>> getAnalytics(DateTime start, DateTime end);
@@ -72,6 +75,43 @@ class AdminService implements IAdminService {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getSeatsByRoom(int roomId) async {
+    try {
+      final response = await _supabase
+          .from('seats')
+          .select()
+          .eq('room_id', roomId)
+          .order('row')
+          .order('number');
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      throw DatabaseException('Không thể lấy danh sách ghế: $e');
+    }
+  }
+
+  @override
+  Future<void> updateRoomLayout(int roomId, int totalRows, int totalColumns, List<Map<String, dynamic>> seats) async {
+    try {
+      // 1. Cập nhật kích thước phòng chiếu
+      await _supabase.from('rooms').update({
+        'total_rows': totalRows,
+        'total_columns': totalColumns,
+        'total_seats': seats.length, // Cập nhật tổng số ghế thực tế
+      }).eq('id', roomId);
+
+      // 2. Xóa các ghế cũ của phòng này
+      await _supabase.from('seats').delete().eq('room_id', roomId);
+
+      // 3. Chèn danh sách ghế mới nếu có
+      if (seats.isNotEmpty) {
+        await _supabase.from('seats').insert(seats);
+      }
+    } catch (e) {
+      throw DatabaseException('Cập nhật sơ đồ ghế thất bại: $e');
+    }
+  }
+
+  @override
   Future<void> addShowtime(Map<String, dynamic> showtimeData) async {
     try {
       await _supabase.from('showtimes').insert(showtimeData);
@@ -97,6 +137,17 @@ class AdminService implements IAdminService {
           .eq('id', id);
     } catch (e) {
       throw DatabaseException('Không thể xóa suất chiếu: $e');
+    }
+  }
+
+  @override
+  Future<void> autoGenerateShowtimes(int days) async {
+    try {
+      await _supabase.rpc('generate_showtimes_for_next_days', params: {
+        'p_days_count': days,
+      });
+    } catch (e) {
+      throw DatabaseException('Không thể tự động tạo lịch chiếu: $e');
     }
   }
 

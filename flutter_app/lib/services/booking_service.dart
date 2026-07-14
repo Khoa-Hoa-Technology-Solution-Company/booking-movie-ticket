@@ -1,12 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/api/app_exception.dart';
 import '../models/booking.dart';
+import '../models/food.dart';
 
 abstract class IBookingService {
   /// Đặt vé (Gọi transaction RPC của Supabase)
   Future<Booking> createBooking({
     required int showtimeId,
     required List<int> seatIds,
+    List<CartItem>? foodItems,
     String? promotionCode,
     String paymentMethod = 'DEMO',
   });
@@ -31,6 +33,7 @@ class BookingService implements IBookingService {
   Future<Booking> createBooking({
     required int showtimeId,
     required List<int> seatIds,
+    List<CartItem>? foodItems,
     String? promotionCode,
     String paymentMethod = 'DEMO',
   }) async {
@@ -95,6 +98,16 @@ class BookingService implements IBookingService {
         }
       }
 
+      // 2.5. Cộng thêm tiền bắp nước (Food & Beverages)
+      final double foodTotal = foodItems?.fold<double>(
+            0.0,
+            (sum, item) => sum + item.totalAmount,
+          ) ??
+          0.0;
+      totalAmount += foodTotal;
+
+      final pItemsJson = foodItems?.map((item) => item.toRpcJson()).toList() ?? [];
+
       // 3. Gọi RPC transaction để tạo booking an toàn ở DB
       final bookingId =
           await _supabase.rpc(
@@ -105,6 +118,7 @@ class BookingService implements IBookingService {
                   'p_seat_ids': seatIds,
                   'p_total_amount': totalAmount,
                   'p_payment_method': paymentMethod,
+                  'p_items': pItemsJson,
                 },
               )
               as int;
@@ -169,7 +183,7 @@ class BookingService implements IBookingService {
       final response = await _supabase
           .from('bookings')
           .select(
-            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)',
+            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*), order_items(*, products(*), combos(*))',
           )
           .eq('user_id', currentUserId)
           .order('created_at', ascending: false);
@@ -186,7 +200,7 @@ class BookingService implements IBookingService {
       final response = await _supabase
           .from('bookings')
           .select(
-            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*)',
+            '*, showtimes(*, rooms(*, cinemas(*)), movies(*)), booking_seats(*, seats(*)), tickets(*), order_items(*, products(*), combos(*))',
           )
           .eq('id', id)
           .single();

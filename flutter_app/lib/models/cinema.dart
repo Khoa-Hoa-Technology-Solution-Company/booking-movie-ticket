@@ -40,6 +40,8 @@ class Room {
   final String name;
   final int totalSeats;
   final String roomType;
+  final int totalRows;
+  final int totalColumns;
 
   const Room({
     required this.id,
@@ -47,6 +49,8 @@ class Room {
     required this.name,
     required this.totalSeats,
     required this.roomType,
+    required this.totalRows,
+    required this.totalColumns,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class Room {
       name: json['name'] as String? ?? '',
       totalSeats: json['total_seats'] as int? ?? 0,
       roomType: json['room_type'] as String? ?? '2D',
+      totalRows: json['total_rows'] as int? ?? 10,
+      totalColumns: json['total_columns'] as int? ?? 10,
     );
   }
 
@@ -66,6 +72,8 @@ class Room {
       'name': name,
       'total_seats': totalSeats,
       'room_type': roomType,
+      'total_rows': totalRows,
+      'total_columns': totalColumns,
     };
   }
 }

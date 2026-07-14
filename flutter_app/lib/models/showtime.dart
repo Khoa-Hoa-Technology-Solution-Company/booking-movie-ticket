@@ -11,6 +11,9 @@ class Seat {
   final int number;
   final SeatType type;
   final SeatStatus status;
+  final int positionX;
+  final int positionY;
+  final bool isActive;
 
   const Seat({
     required this.id,
@@ -19,6 +22,9 @@ class Seat {
     required this.number,
     required this.type,
     required this.status,
+    required this.positionX,
+    required this.positionY,
+    required this.isActive,
   });
 
   factory Seat.fromJson(Map<String, dynamic> json, {List<int>? bookedSeatIds, List<int>? heldSeatIds}) {
@@ -41,13 +47,19 @@ class Seat {
       return SeatStatus.available;
     }
 
+    final rowStr = json['row'] as String? ?? '';
+    final defaultY = rowStr.isNotEmpty ? rowStr.toUpperCase().codeUnitAt(0) - 64 : 1;
+
     return Seat(
       id: idVal,
       roomId: json['room_id'] as int,
-      row: json['row'] as String? ?? '',
+      row: rowStr,
       number: json['number'] as int? ?? 0,
       type: parseType(json['type'] as String?),
       status: parseStatus(json['status'] as String?),
+      positionX: json['position_x'] as int? ?? (json['number'] as int? ?? 0),
+      positionY: json['position_y'] as int? ?? defaultY,
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
@@ -69,6 +81,9 @@ class Seat {
               : status == SeatStatus.maintenance
                   ? 'MAINTENANCE'
                   : 'AVAILABLE',
+      'position_x': positionX,
+      'position_y': positionY,
+      'is_active': isActive,
     };
   }
 }

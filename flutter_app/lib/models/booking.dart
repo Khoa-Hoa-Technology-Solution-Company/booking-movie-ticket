@@ -14,6 +14,7 @@ class Booking {
   final Showtime? showtime;
   final List<Seat>? seats;
   final Ticket? ticket;
+  final List<BookingOrderItem>? orderItems;
 
   const Booking({
     required this.id,
@@ -26,6 +27,7 @@ class Booking {
     this.showtime,
     this.seats,
     this.ticket,
+    this.orderItems,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,14 @@ class Booking {
           .toList();
     }
 
+    // Parse order items if present from join table
+    List<BookingOrderItem>? orderItemsList;
+    if (json['order_items'] != null) {
+      orderItemsList = (json['order_items'] as List)
+          .map((oi) => BookingOrderItem.fromJson(oi as Map<String, dynamic>))
+          .toList();
+    }
+
     return Booking(
       id: json['id'] as int,
       userId: json['user_id'] as String,
@@ -67,6 +77,7 @@ class Booking {
                   : null
               : Ticket.fromJson(json['tickets'] as Map<String, dynamic>))
           : null,
+      orderItems: orderItemsList,
     );
   }
 
@@ -87,6 +98,42 @@ class Booking {
       'updated_at': updatedAt.toIso8601String(),
       if (showtime != null) 'showtimes': showtime!.toJson(),
     };
+  }
+}
+
+class BookingOrderItem {
+  final int id;
+  final int bookingId;
+  final int? productId;
+  final int? comboId;
+  final int quantity;
+  final double price;
+  final String itemName;
+
+  const BookingOrderItem({
+    required this.id,
+    required this.bookingId,
+    this.productId,
+    this.comboId,
+    required this.quantity,
+    required this.price,
+    required this.itemName,
+  });
+
+  factory BookingOrderItem.fromJson(Map<String, dynamic> json) {
+    final productName = json['products']?['name'] as String?;
+    final comboName = json['combos']?['name'] as String?;
+    final name = comboName ?? productName ?? 'Bắp nước';
+
+    return BookingOrderItem(
+      id: json['id'] as int,
+      bookingId: json['booking_id'] as int,
+      productId: json['product_id'] as int?,
+      comboId: json['combo_id'] as int?,
+      quantity: json['quantity'] as int? ?? 1,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      itemName: name,
+    );
   }
 }
 

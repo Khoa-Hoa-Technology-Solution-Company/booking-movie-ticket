@@ -1,14 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/payment_config.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/movie_service.dart';
 import '../../services/booking_service.dart';
 import '../../models/showtime.dart';
 import '../../models/booking.dart';
+import 'food_selection_screen.dart';
+import '../../widgets/booking_components.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
   final int showtimeId;
@@ -354,7 +358,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     }
   }
 
-  Future<void> _handleBookTickets() async {
+  void _handleBookTickets() {
     if (_selectedSeatIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn ít nhất 1 ghế')),
@@ -362,62 +366,19 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF16162A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FoodSelectionScreen(
+          showtimeId: widget.showtimeId,
+          selectedSeatIds: _selectedSeatIds.toList(),
+          promotionCode: _appliedPromo != null ? _appliedPromo!['code'] as String : null,
+        ),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Chọn Phương Thức Thanh Toán',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const Icon(Icons.wallet, color: Color(0xFFC084FC)),
-                  title: const Text('Ví Điện Tử Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _processBookingWithMethod('DEMO');
-                  },
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: const Icon(Icons.account_balance, color: Color(0xFFC084FC)),
-                  title: const Text('Chuyển Khoản Ngân Hàng (SePay)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _processBookingWithMethod('SEPAY');
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    ).then((_) {
+      // Reload seat layout when returning to check holds or update UI
+      _loadSeatLayout();
+    });
   }
   Future<void> _processBookingWithMethod(String paymentMethod) async {
     setState(() => _isBooking = true);
@@ -987,18 +948,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC084FC),
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text(
-                  'Hoàn Thành',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                child: const Text('Hoàn Thành', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1013,73 +966,110 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
     if (_isLoading || _showtimeDetail == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFF0F0F1A),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFC084FC)),
-        ),
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
-    // Group seats by row
-    final Map<String, List<Seat>> seatsByRow = {};
+    final showtime = _showtimeDetail!.showtime;
+    final room = showtime.room;
+    final int totalRows = room?.totalRows ?? 10;
+    final int totalColumns = room?.totalColumns ?? 10;
+
+    final List<List<Seat?>> grid = List.generate(
+      totalRows, (_) => List.filled(totalColumns, null),
+    );
     for (var seat in _showtimeDetail!.seats) {
-      final String r = seat.row;
-      seatsByRow.putIfAbsent(r, () => []).add(seat);
+      final int rIdx = seat.positionY - 1;
+      final int cIdx = seat.positionX - 1;
+      if (rIdx >= 0 && rIdx < totalRows && cIdx >= 0 && cIdx < totalColumns) {
+        grid[rIdx][cIdx] = seat;
+      }
+
     }
 
     final double subtotal = _calculateSubtotal();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Chọn Ghế',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF16162A),
+        title: Text('Chọn Ghế', style: AppTextStyles.titleSmall),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+          ),
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Screen Indicator
+          // === SHOWTIME INFO STRIP ===
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.movie_outlined, color: AppColors.primary, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    showtime.movie?.title ?? 'Phim',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDim,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    DateFormat('HH:mm - dd/MM').format(showtime.startTime),
+                    style: GoogleFonts.robotoMono(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // === SCREEN INDICATOR ===
           const SizedBox(height: 20),
           Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              height: 6,
-              decoration: BoxDecoration(
-                color: const Color(0xFFC084FC),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFC084FC).withOpacity(0.5),
-                    blurRadius: 10,
-                    spreadRadius: 2,
+            child: Column(
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.65,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.45), blurRadius: 12, spreadRadius: 2)],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                Text('MÀN HÌNH CHIẾU',
+                  style: GoogleFonts.robotoMono(color: AppColors.textMuted, fontSize: 9, letterSpacing: 3)),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          const Center(
-            child: Text(
-              'MÀN HÌNH CHIẾU',
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 10,
-                letterSpacing: 4,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
-          // Legend Indicators
+          // === LEGEND ===
           _buildLegends(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
-          // Seat Grid
+          // === SEAT GRID ===
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
@@ -1088,281 +1078,161 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
-                    children: seatsByRow.keys.map((rowKey) {
-                      final rowSeats = seatsByRow[rowKey]!;
+                    children: List.generate(totalRows, (rowIdx) {
+                      String rowLetter = '';
+                      for (int col = 0; col < totalColumns; col++) {
+                        if (grid[rowIdx][col] != null) { rowLetter = grid[rowIdx][col]!.row; break; }
+                      }
+                      if (rowLetter.isEmpty) rowLetter = String.fromCharCode(65 + rowIdx);
+
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        padding: const EdgeInsets.symmetric(vertical: 3.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Row Letter Label Left
                             SizedBox(
-                              width: 24,
-                              child: Text(
-                                rowKey,
-                                style: const TextStyle(
-                                  color: Colors.white54,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              width: 22,
+                              child: Text(rowLetter, style: AppTextStyles.seatLabel.copyWith(color: AppColors.textMuted)),
                             ),
-                            // Seats List in Row
-                            ...rowSeats.map((seat) {
-                              final bool isSelected = _selectedSeatIds.contains(
-                                seat.id,
-                              );
-                              final bool isBooked =
-                                  seat.status == SeatStatus.booked;
-                              final bool isMaintenance =
-                                  seat.status == SeatStatus.maintenance;
-
-                              Color seatColor = Colors.white24;
-                              IconData? icon;
-
-                              if (isBooked) {
-                                seatColor = const Color(0xFF1E1E2E);
-                                icon = Icons.lock_outline;
-                              } else if (seat.status == SeatStatus.held) {
-                                seatColor = Colors.orange.withOpacity(0.6);
-                                icon = Icons.person_outline;
-                              } else if (isMaintenance) {
-                                seatColor = Colors.grey.shade800;
-                                icon = Icons.construction;
-                              } else if (isSelected) {
-                                seatColor = const Color(
-                                  0xFF4ADE80,
-                                ); // Bright Green
-                              } else {
-                                if (seat.type == SeatType.vip) {
-                                  seatColor = const Color(0xFFF97316); // Orange
-                                } else if (seat.type == SeatType.couple) {
-                                  seatColor = const Color(0xFFEF4444); // Red
-                                } else {
-                                  seatColor = Colors.white54; // Standard
-                                }
-                              }
-
-                              return GestureDetector(
-                                onTap: () => _toggleSeat(seat),
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? seatColor
-                                        : Colors.transparent,
-                                    border: Border.all(
-                                      color: seatColor,
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: icon != null
-                                        ? Icon(
-                                            icon,
-                                            color: Colors.white38,
-                                            size: 16,
-                                          )
-                                        : Text(
-                                            '${seat.number}',
-                                            style: TextStyle(
-                                              color: isSelected
-                                                  ? Colors.black
-                                                  : Colors.white70,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              );
+                            ...List.generate(totalColumns, (colIdx) {
+                              final seat = grid[rowIdx][colIdx];
+                              if (seat == null) return const SizedBox(width: 32, height: 32);
+                              final bool isSelected = _selectedSeatIds.contains(seat.id);
+                              return SeatWidget(seat: seat, isSelected: isSelected, onTap: () => _toggleSeat(seat));
                             }),
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                   ),
                 ),
               ),
             ),
           ),
 
-          // Bottom Bar containing Total, Promo and Book Button
+          // === BOTTOM BAR ===
           Container(
-            color: const Color(0xFF16162A),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: SafeArea(
+              top: false,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Promo code input & apply button
+                  // Promo row
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _promoController,
                           enabled: _appliedPromo == null,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: 'Nhập mã khuyến mãi (ví dụ: WELCOME10)',
-                            hintStyle: const TextStyle(
-                              color: Colors.white30,
-                              fontSize: 13,
-                            ),
+                            hintText: 'Mã khuyến mãi (VD: WELCOME10)',
+                            hintStyle: AppTextStyles.caption,
                             filled: true,
                             fillColor: Colors.white.withOpacity(0.05),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
+                              borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            prefixIcon: const Icon(Icons.local_offer_outlined, color: AppColors.textMuted, size: 16),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _isValidatingPromo
-                            ? null
-                            : (_appliedPromo != null
-                                ? _removePromotion
-                                : _applyPromotion),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _appliedPromo != null
-                              ? Colors.red.withOpacity(0.2)
-                              : const Color(0xFFC084FC).withOpacity(0.2),
-                          foregroundColor: _appliedPromo != null
-                              ? Colors.red
-                              : const Color(0xFFC084FC),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: _isValidatingPromo ? null : (_appliedPromo != null ? _removePromotion : _applyPromotion),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: _appliedPromo != null ? AppColors.danger.withOpacity(0.12) : AppColors.primaryDim,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _appliedPromo != null ? AppColors.danger.withOpacity(0.3) : AppColors.primary.withOpacity(0.3)),
                           ),
-                        ),
-                        child: _isValidatingPromo
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFFC084FC),
+                          child: _isValidatingPromo
+                              ? const SizedBox(width: 14, height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                              : Text(
+                                  _appliedPromo != null ? 'Hủy' : 'Áp dụng',
+                                  style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold,
+                                    color: _appliedPromo != null ? AppColors.danger : AppColors.primary),
                                 ),
-                              )
-                            : Text(_appliedPromo != null ? 'Hủy' : 'Áp dụng'),
+                        ),
                       ),
                     ],
                   ),
                   if (_promoError != null) ...[
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        _promoError!,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ),
+                    const SizedBox(height: 4),
+                    Text(_promoError!, style: const TextStyle(color: AppColors.danger, fontSize: 11)),
                   ],
                   if (_appliedPromo != null) ...[
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        'Áp dụng thành công: Giảm ${_appliedPromo!['discount_percent']}%${_appliedPromo!['max_discount'] != null ? " (Tối đa ${formatter.format(_appliedPromo!['max_discount'])})" : ""}',
-                        style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '✓ Giảm ${_appliedPromo!["discount_percent"]}%${_appliedPromo!["max_discount"] != null ? " (Tối đa ${formatter.format(_appliedPromo!["max_discount"])})" : ""}',
+                      style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ],
-                  const SizedBox(height: 16),
-
-                  // Pricing & Confirm Row
+                  const SizedBox(height: 12),
+                  // Pricing + confirm
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_discountAmount > 0) ...[
-                            Text(
-                              'Tạm tính: ${formatter.format(subtotal)}',
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 11,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Khuyến mãi: -${formatter.format(_discountAmount)}',
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                          ],
-                          Text(
-                            _discountAmount > 0 ? 'Tổng cộng:' : 'Tạm tính:',
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            formatter.format(subtotal - _discountAmount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 20),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: (_selectedSeatIds.isEmpty || _isBooking)
-                              ? null
-                              : _handleBookTickets,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC084FC),
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_discountAmount > 0) ...[
+                              Text(formatter.format(subtotal),
+                                style: const TextStyle(color: AppColors.textMuted, fontSize: 11,
+                                  decoration: TextDecoration.lineThrough)),
+                              Text('- ${formatter.format(_discountAmount)}',
+                                style: const TextStyle(color: AppColors.success, fontSize: 11)),
+                            ],
+                            Text(
+                              _selectedSeatIds.isEmpty ? 'Chọn ghế để tiếp tục' : '${_selectedSeatIds.length} ghế đã chọn',
+                              style: AppTextStyles.caption,
                             ),
+                            Text(
+                              formatter.format(subtotal - _discountAmount),
+                              style: AppTextStyles.price,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Opacity(
+                        opacity: (_selectedSeatIds.isEmpty || _isBooking) ? 0.4 : 1.0,
+                        child: GestureDetector(
+                          onTap: (_selectedSeatIds.isEmpty || _isBooking) ? null : _handleBookTickets,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(AppRadius.button),
+                              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                            ),
+                            child: _isBooking
+                                ? const SizedBox(width: 20, height: 20,
+                                    child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.restaurant_menu_rounded, size: 16, color: Colors.black),
+                                      const SizedBox(width: 6),
+                                      Text('Tiếp Tục',
+                                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black)),
+                                    ],
+                                  ),
                           ),
-                          child: _isBooking
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.black,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                                  'Đặt Vé Ngay',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -1373,21 +1243,29 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
   }
 
   Widget _buildLegends() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _LegendItem(color: Colors.white54, label: 'Thường'),
-        SizedBox(width: 12),
-        _LegendItem(color: Color(0xFFF97316), label: 'VIP'),
-        SizedBox(width: 12),
-        _LegendItem(color: Color(0xFFEF4444), label: 'Ghế đôi'),
-        SizedBox(width: 12),
-        _LegendItem(color: Color(0xFF4ADE80), label: 'Đang chọn'),
-        SizedBox(width: 12),
-        _LegendItem(color: Colors.orange, label: 'Đang giữ', hasIcon: true),
-        SizedBox(width: 12),
-        _LegendItem(color: Color(0xFF1E1E2E), label: 'Đã đặt', hasIcon: true),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
+        ),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 14,
+          runSpacing: 6,
+          children: const [
+            _LegendItem(color: Color(0xFFB0B0C8), label: 'Thường'),
+            _LegendItem(color: Color(0xFFF97316), label: 'VIP'),
+            _LegendItem(color: Color(0xFFEF4444), label: 'Đôi'),
+            _LegendItem(color: Color(0xFF4ADE80), label: 'Đang chọn', filled: true),
+            _LegendItem(color: Color(0xFFF59E0B), label: 'Đang giữ', filled: true),
+            _LegendItem(color: Color(0xFF2D2D3E), label: 'Đã đặt', filled: true, locked: true),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1395,35 +1273,35 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
-  final bool hasIcon;
+  final bool filled;
+  final bool locked;
 
   const _LegendItem({
     required this.color,
     required this.label,
-    this.hasIcon = false,
+    this.filled = false,
+    this.locked = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 16,
-          height: 16,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
-            color: hasIcon ? color : Colors.transparent,
-            border: Border.all(color: color, width: 2),
-            borderRadius: BorderRadius.circular(4),
+            color: filled ? color : color.withOpacity(0.15),
+            border: Border.all(color: color, width: 1.5),
+            borderRadius: BorderRadius.circular(AppRadius.seat / 2),
           ),
-          child: hasIcon
-              ? const Icon(Icons.lock_outline, size: 10, color: Colors.white38)
+          child: locked
+              ? const Icon(Icons.lock_rounded, size: 8, color: Colors.white38)
               : null,
         ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 10),
-        ),
+        const SizedBox(width: 5),
+        Text(label, style: AppTextStyles.caption.copyWith(fontSize: 10)),
       ],
     );
   }

@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'config/supabase_config.dart';
+import 'core/theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Khởi tạo Supabase
-  if (SupabaseConfig.url != 'YOUR_SUPABASE_URL' && SupabaseConfig.anonKey != 'YOUR_SUPABASE_ANON_KEY') {
+
+  if (SupabaseConfig.url != 'YOUR_SUPABASE_URL' &&
+      SupabaseConfig.anonKey != 'YOUR_SUPABASE_ANON_KEY') {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
     );
   } else {
-    debugPrint('⚠️ Supabase chưa được cấu hình. Vui lòng cập nhật URL và Anon Key!');
+    debugPrint('⚠️ Supabase chưa được cấu hình!');
   }
-  
-  // Kiểm tra trạng thái đăng nhập tự động
+
   final bool loggedIn = await authService.isLoggedIn();
 
   runApp(MovieApp(initialScreen: loggedIn ? const App() : const LoginScreen()));
@@ -26,7 +26,6 @@ void main() async {
 
 class MovieApp extends StatelessWidget {
   final Widget initialScreen;
-
   const MovieApp({super.key, required this.initialScreen});
 
   @override
@@ -35,28 +34,7 @@ class MovieApp extends StatelessWidget {
       title: 'Movie Ticket Booking',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F1A), // Obsidian Black
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFC084FC),      // Purple accent
-          secondary: Color(0xFF8B5CF6),    // Dark violet
-          surface: Color(0xFF16162A),      // Card surface
-          background: Color(0xFF0F0F1A),
-          error: Colors.redAccent,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF16162A),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF16162A),
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      ),
+      darkTheme: AppTheme.dark,
       home: initialScreen,
     );
   }

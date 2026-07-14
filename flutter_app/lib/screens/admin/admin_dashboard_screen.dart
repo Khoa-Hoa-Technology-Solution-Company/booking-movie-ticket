@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/admin_service.dart';
 import '../../services/movie_service.dart';
 import '../../models/movie.dart';
@@ -19,12 +21,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Quản Trị Hệ Thống', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        title: Text('Quản Trị Hệ Thống', style: AppTextStyles.titleSmall),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+          ),
+        ),
       ),
       body: IndexedStack(
         index: _currentTab,
@@ -37,44 +50,55 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _AdminAnalyticsTab(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTab,
-        onTap: (index) {
-          setState(() => _currentTab = index);
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF16162A),
-        selectedItemColor: const Color(0xFFC084FC),
-        unselectedItemColor: Colors.white30,
-        selectedFontSize: 10,
-        unselectedFontSize: 10,
-        iconSize: 18,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.movie_rounded),
-            label: 'Phim',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.schedule_rounded),
-            label: 'Suất Chiếu',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner_rounded),
-            label: 'Check-in',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_offer_rounded),
-            label: 'Mã Giảm',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_rounded),
-            label: 'User',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics_rounded),
-            label: 'Thống Kê',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentTab,
+          onTap: (index) {
+            setState(() => _currentTab = index);
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textMuted,
+          selectedLabelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 10),
+          unselectedLabelStyle: GoogleFonts.outfit(fontSize: 10),
+          iconSize: 20,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.movie_outlined),
+              activeIcon: Icon(Icons.movie_rounded),
+              label: 'Phim',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule_outlined),
+              activeIcon: Icon(Icons.schedule_rounded),
+              label: 'Suất Chiếu',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code_scanner_outlined),
+              activeIcon: Icon(Icons.qr_code_scanner_rounded),
+              label: 'Check-in',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.local_offer_outlined),
+              activeIcon: Icon(Icons.local_offer_rounded),
+              label: 'Mã Giảm',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline_rounded),
+              activeIcon: Icon(Icons.people_rounded),
+              label: 'User',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.analytics_outlined),
+              activeIcon: Icon(Icons.analytics_rounded),
+              label: 'Thống Kê',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -578,6 +602,57 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
     );
   }
 
+  Future<void> _autoGenerateShowtimes() async {
+    final confirm = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF16162A),
+        title: const Text('Tạo Suất Chiếu Tự Động', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Hệ thống sẽ tự động phân bổ lịch chiếu cho toàn bộ phim đang chiếu (NOW_SHOWING) trong các ngày tiếp theo mà không bị trùng giờ. Hãy chọn số ngày muốn tạo:',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 0),
+            child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 3),
+            child: const Text('3 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 7),
+            child: const Text('7 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != null && confirm > 0) {
+      setState(() => _isLoading = true);
+      try {
+        await adminService.autoGenerateShowtimes(confirm);
+        _showSnackBar('Đã tự động sinh lịch chiếu thành công cho $confirm ngày tới!', Colors.green);
+        _loadShowtimes();
+      } catch (e) {
+        _showSnackBar('Tạo lịch chiếu tự động thất bại: $e', Colors.red);
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _openRoomLayoutSelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => const _RoomSelectorBottomSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
@@ -585,45 +660,101 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
         onPressed: _openShowtimeForm,
-        backgroundColor: const Color(0xFFC084FC),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.black),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadShowtimes,
-              child: _showtimes.isEmpty
-                  ? const Center(child: Text('Chưa có suất chiếu nào', style: TextStyle(color: Colors.white54)))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _showtimes.length,
-                      itemBuilder: (context, index) {
-                        final st = _showtimes[index];
-                        final movieTitle = st.movie?.title ?? 'Phim';
-                        final startStr = DateFormat('dd/MM/yyyy HH:mm').format(st.startTime);
-                        final endStr = DateFormat('HH:mm').format(st.endTime);
-
-                        return Card(
-                          color: const Color(0xFF1E1B4B).withOpacity(0.4),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          child: ListTile(
-                            title: Text(movieTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                '${st.cinema?.name} - ${st.room?.name} (${st.room?.roomType})\n$startStr - $endStr\nGiá vé: ${formatter.format(st.price)}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              color: AppColors.primary,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Danh Sách Suất Chiếu',
+                              style: AppTextStyles.titleMedium,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _openRoomLayoutSelector,
+                                icon: const Icon(Icons.grid_view_rounded, size: 16),
+                                label: const Text('Sơ Đồ Ghế', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryDim,
+                                  foregroundColor: AppColors.primary,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                               ),
                             ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                              onPressed: () => _deleteShowtime(st.id),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _autoGenerateShowtimes,
+                                icon: const Icon(Icons.auto_awesome, size: 16),
+                                label: const Text('Tạo Tự Động', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryDim,
+                                  foregroundColor: AppColors.primary,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                  Expanded(
+                    child: _showtimes.isEmpty
+                        ? const Center(child: Text('Chưa có suất chiếu nào', style: TextStyle(color: Colors.white54)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _showtimes.length,
+                            itemBuilder: (context, index) {
+                              final st = _showtimes[index];
+                              final movieTitle = st.movie?.title ?? 'Phim';
+                              final startStr = DateFormat('dd/MM/yyyy HH:mm').format(st.startTime);
+                              final endStr = DateFormat('HH:mm').format(st.endTime);
+
+                              return Card(
+                                color: const Color(0xFF1E1B4B).withOpacity(0.4),
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                child: ListTile(
+                                  title: Text(movieTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(
+                                      '${st.cinema?.name} - ${st.room?.name} (${st.room?.roomType})\n$startStr - $endStr\nGiá vé: ${formatter.format(st.price)}',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                    ),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                                    onPressed: () => _deleteShowtime(st.id),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
     );
   }
@@ -1815,7 +1946,7 @@ class _SectionContainer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF16162A),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
@@ -1830,3 +1961,475 @@ class _SectionContainer extends StatelessWidget {
     );
   }
 }
+
+// ========================================================
+// 7. WIDGET CHỌN PHÒNG VÀ BIÊN TẬP SƠ ĐỒ GHẾ
+// ========================================================
+
+class _RoomSelectorBottomSheet extends StatefulWidget {
+  const _RoomSelectorBottomSheet();
+
+  @override
+  State<_RoomSelectorBottomSheet> createState() => _RoomSelectorBottomSheetState();
+}
+
+class _RoomSelectorBottomSheetState extends State<_RoomSelectorBottomSheet> {
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _rooms = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRooms();
+  }
+
+  Future<void> _loadRooms() async {
+    try {
+      final rooms = await adminService.getRooms();
+      setState(() {
+        _rooms = rooms;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải phòng chiếu: $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    }
+  }
+
+  void _openGridEditor(int roomId, String roomName, String cinemaName) {
+    Navigator.pop(context); // Close selector
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => _VisualSeatGridEditorSheet(
+        roomId: roomId,
+        roomName: roomName,
+        cinemaName: cinemaName,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.65,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Chọn Phòng Thiết Kế Ghế', style: AppTextStyles.titleMedium, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : _rooms.isEmpty
+                      ? const Center(child: Text('Không có phòng chiếu nào', style: TextStyle(color: AppColors.textMuted)))
+                      : ListView.builder(
+                          itemCount: _rooms.length,
+                          itemBuilder: (context, index) {
+                            final r = _rooms[index];
+                            final id = r['id'] as int;
+                            final name = r['name'] as String;
+                            final cinemaName = r['cinemas'] != null ? r['cinemas']['name'] as String : 'Rạp';
+                            final totalSeats = r['total_seats'] as int? ?? 0;
+                            final rSize = '${r["total_rows"] ?? 10}x${r["total_columns"] ?? 10}';
+
+                            return Card(
+                              color: AppColors.surface,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                side: const BorderSide(color: AppColors.border),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  width: 44, height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryDim,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.grid_view_rounded, color: AppColors.primary, size: 20),
+                                ),
+                                title: Text('$cinemaName - $name', style: AppTextStyles.bodyBold),
+                                subtitle: Text('Lưới: $rSize • Tổng số ghế: $totalSeats', style: AppTextStyles.caption),
+                                trailing: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
+                                onTap: () => _openGridEditor(id, name, cinemaName),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VisualSeatGridEditorSheet extends StatefulWidget {
+  final int roomId;
+  final String roomName;
+  final String cinemaName;
+
+  const _VisualSeatGridEditorSheet({
+    required this.roomId,
+    required this.roomName,
+    required this.cinemaName,
+  });
+
+  @override
+  State<_VisualSeatGridEditorSheet> createState() => _VisualSeatGridEditorSheetState();
+}
+
+class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> {
+  bool _isLoading = true;
+  bool _isSaving = false;
+  int _rows = 8;
+  int _cols = 8;
+
+  // Layout Grid: key is "row_col" (1-indexed), value is SeatType string ('STANDARD', 'VIP', 'COUPLE')
+  final Map<String, String> _gridSeats = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLayout();
+  }
+
+  Future<void> _loadLayout() async {
+    try {
+      final supabase = Supabase.instance.client;
+      // Fetch room details to get current grid dimensions
+      final roomRes = await supabase.from('rooms').select().eq('id', widget.roomId).single();
+      final seatsRes = await adminService.getSeatsByRoom(widget.roomId);
+
+      setState(() {
+        _rows = roomRes['total_rows'] as int? ?? 8;
+        _cols = roomRes['total_columns'] as int? ?? 8;
+        
+        _gridSeats.clear();
+        for (var s in seatsRes) {
+          final x = s['position_x'] as int;
+          final y = s['position_y'] as int;
+          final type = s['type'] as String? ?? 'STANDARD';
+          _gridSeats['${y}_${x}'] = type;
+        }
+        
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải sơ đồ cũ: $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    }
+  }
+
+  void _cycleSeatType(int r, int c) {
+    final key = '${r}_${c}';
+    final current = _gridSeats[key];
+    setState(() {
+      if (current == null) {
+        _gridSeats[key] = 'STANDARD';
+      } else if (current == 'STANDARD') {
+        _gridSeats[key] = 'VIP';
+      } else if (current == 'VIP') {
+        _gridSeats[key] = 'COUPLE';
+      } else {
+        _gridSeats.remove(key); // Becomes Empty (Walkway)
+      }
+    });
+  }
+
+  Future<void> _saveLayout() async {
+    setState(() => _isSaving = true);
+    try {
+      final List<Map<String, dynamic>> seatsToInsert = [];
+
+      _gridSeats.forEach((key, type) {
+        final parts = key.split('_');
+        final r = int.parse(parts[0]);
+        final c = int.parse(parts[1]);
+        final rowLetter = String.fromCharCode(64 + r); // 1 -> A, 2 -> B...
+
+        seatsToInsert.add({
+          'room_id': widget.roomId,
+          'row': rowLetter,
+          'number': c,
+          'type': type,
+          'status': 'AVAILABLE',
+          'position_x': c,
+          'position_y': r,
+          'is_active': true,
+        });
+      });
+
+      await adminService.updateRoomLayout(widget.roomId, _rows, _cols, seatsToInsert);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật sơ đồ phòng chiếu thành công!'), backgroundColor: AppColors.success),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi lưu sơ đồ: $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.only(left: 16, right: 16, top: 20, bottom: 20 + bottomInset),
+      height: MediaQuery.of(context).size.height * 0.85,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Text('${widget.cinemaName} - ${widget.roomName}', style: AppTextStyles.titleMedium, textAlign: TextAlign.center),
+          const SizedBox(height: 4),
+          const Text(
+            'Chạm vào ô để thay đổi: Trống → Thường → VIP → Ghế Đôi',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+          ),
+          const SizedBox(height: 16),
+
+          // Dimension Controllers
+          if (!_isLoading) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildDimensionCounter(
+                  label: 'Hàng dọc',
+                  value: _rows,
+                  onInc: () => setState(() => _rows = (_rows < 15) ? _rows + 1 : _rows),
+                  onDec: () => setState(() => _rows = (_rows > 2) ? _rows - 1 : _rows),
+                ),
+                const SizedBox(width: 32),
+                _buildDimensionCounter(
+                  label: 'Cột ngang',
+                  value: _cols,
+                  onInc: () => setState(() => _cols = (_cols < 15) ? _cols + 1 : _cols),
+                  onDec: () => setState(() => _cols = (_cols > 2) ? _cols - 1 : _cols),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Legend
+            _buildEditorLegend(),
+            const SizedBox(height: 16),
+          ],
+
+          // Grid Area
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Column(
+                          children: List.generate(_rows, (rIdx) {
+                            final rNum = rIdx + 1;
+                            final rowLetter = String.fromCharCode(64 + rNum);
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                children: [
+                                  // Row header
+                                  SizedBox(
+                                    width: 24,
+                                    child: Text(rowLetter, style: AppTextStyles.seatLabel.copyWith(color: AppColors.textMuted)),
+                                  ),
+                                  // Columns
+                                  ...List.generate(_cols, (cIdx) {
+                                    final cNum = cIdx + 1;
+                                    final key = '${rNum}_${cNum}';
+                                    final type = _gridSeats[key];
+
+                                    Color color = Colors.transparent;
+                                    Color borderColor = AppColors.border;
+                                    String text = '';
+
+                                    if (type == 'STANDARD') {
+                                      color = const Color(0xFFB0B0C8).withOpacity(0.15);
+                                      borderColor = const Color(0xFFB0B0C8);
+                                      text = 'S';
+                                    } else if (type == 'VIP') {
+                                      color = const Color(0xFFF97316).withOpacity(0.15);
+                                      borderColor = const Color(0xFFF97316);
+                                      text = 'V';
+                                    } else if (type == 'COUPLE') {
+                                      color = const Color(0xFFEF4444).withOpacity(0.15);
+                                      borderColor = const Color(0xFFEF4444);
+                                      text = 'C';
+                                    }
+
+                                    return GestureDetector(
+                                      onTap: () => _cycleSeatType(rNum, cNum),
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          border: Border.all(color: borderColor, width: 1.5),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Center(
+                                          child: Text(text, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.bold, color: borderColor)),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 16),
+
+          // Actions
+          if (!_isLoading)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isSaving ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textMuted,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Hủy'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveLayout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                          : const Text('Lưu Sơ Đồ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDimensionCounter({
+    required String label,
+    required int value,
+    required VoidCallback onInc,
+    required VoidCallback onDec,
+  }) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: onDec,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.remove, size: 14, color: Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Text('$value', style: GoogleFonts.robotoMono(fontSize: 15, fontWeight: FontWeight.bold)),
+            ),
+            GestureDetector(
+              onTap: onInc,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
+                child: const Icon(Icons.add, size: 14, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditorLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        _EditorLegendItem(color: AppColors.border, label: 'Trống'),
+        SizedBox(width: 12),
+        _EditorLegendItem(color: Color(0xFFB0B0C8), label: 'Thường (S)'),
+        SizedBox(width: 12),
+        _EditorLegendItem(color: Color(0xFFF97316), label: 'VIP (V)'),
+        SizedBox(width: 12),
+        _EditorLegendItem(color: Color(0xFFEF4444), label: 'Đôi (C)'),
+      ],
+    );
+  }
+}
+
+class _EditorLegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _EditorLegendItem({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color.withOpacity(0.15), border: Border.all(color: color), borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+      ],
+    );
+  }
+}
+

@@ -609,7 +609,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         final room = showtime?.room;
                         final cinema = showtime?.cinema;
                         final seats = booking.seats ?? [];
-                        
+
+                        // ✅ Kiểm tra suất chiếu đã qua chưa (so sánh với giờ hiện tại)
+                        final bool isShowtimePast = showtime != null
+                            ? showtime.startTime.isBefore(DateTime.now())
+                            : false;
+
                         final double totalAmount = booking.totalAmount;
                         final String movieTitle = movie?.title ?? 'Phim';
                         final String cinemaName = cinema?.name ?? 'Rạp';
@@ -619,17 +624,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                             : '';
                         final String seatNames = seats.map((s) => '${s.row}${s.number}').join(', ');
 
-                        Color statusColor = Colors.grey;
-                        String statusText = 'PENDING';
+                        // ✅ Xác định màu & nhãn trạng thái
+                        // Nếu PENDING mà suất chiếu đã qua → coi như HẾT HẠN
+                        Color statusColor;
+                        String statusText;
                         if (booking.status == BookingStatus.confirmed) {
                           statusColor = Colors.green;
                           statusText = 'ĐÃ THANH TOÁN';
                         } else if (booking.status == BookingStatus.cancelled) {
                           statusColor = Colors.red;
                           statusText = 'ĐÃ HỦY';
-                        } else if (booking.status == BookingStatus.expired) {
-                          statusColor = Colors.grey.shade700;
+                        } else if (booking.status == BookingStatus.expired ||
+                            (booking.status == BookingStatus.pending && isShowtimePast)) {
+                          statusColor = Colors.grey.shade600;
                           statusText = 'HẾT HẠN';
+                        } else {
+                          // PENDING và suất chiếu chưa qua
+                          statusColor = const Color(0xFFF59E0B);
+                          statusText = 'CHỜ THANH TOÁN';
                         }
 
                         return Card(
@@ -674,11 +686,28 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 // Cinema and Date
                                 Text('$cinemaName - $roomName (${room?.roomType ?? '2D'})', style: const TextStyle(color: Colors.white70, fontSize: 13)),
                                 const SizedBox(height: 4),
-                                Text(dateStr, style: const TextStyle(color: Color(0xFFC084FC), fontSize: 12, fontWeight: FontWeight.bold)),
+                                 // Ngày chiếu: đỏ nếu đã qua, tím nếu còn hạn
+                                 Text(
+                                   dateStr,
+                                   style: TextStyle(
+                                     color: isShowtimePast
+                                         ? Colors.redAccent
+                                         : const Color(0xFFC084FC),
+                                     fontSize: 12,
+                                     fontWeight: FontWeight.bold,
+                                   ),
+                                 ),
                                 const SizedBox(height: 6),
                                 
                                 // Seat list
                                 Text('Danh sách ghế: $seatNames', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                if (booking.orderItems != null && booking.orderItems!.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Bắp nước: ${booking.orderItems!.map((item) => '${item.itemName} (x${item.quantity})').join(', ')}',
+                                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                  ),
+                                ],
                                 const SizedBox(height: 12),
                                 
                                 const Divider(color: Colors.white10),
@@ -696,8 +725,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                       ],
                                     ),
                                     
-                                    // Actions: If Pending -> Pay / Cancel; If Confirmed -> View Ticket QR
-                                    if (booking.status == BookingStatus.pending)
+                                    // ✅ Actions theo trạng thái:
+                                    // - PENDING + suất chiếu chưa qua → Hủy + Thanh Toán
+                                    // - PENDING + suất chiếu ĐÃ QUA → Badge "Hết Hạn" (không cho thanh toán)
+                                    // - CONFIRMED → Xem QR
+                                    if (booking.status == BookingStatus.pending && !isShowtimePast)
                                       Row(
                                         children: [
                                           TextButton(
@@ -714,6 +746,27 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                             child: const Text('Thanh Toán', style: TextStyle(color: Colors.white, fontSize: 12)),
                                           ),
                                         ],
+                                      )
+                                    else if (booking.status == BookingStatus.pending && isShowtimePast)
+                                      // Pending nhưng suất đã qua → hiện hết hạn
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.event_busy_rounded, size: 13, color: Colors.grey.shade500),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              'Hết Hạn',
+                                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
                                       )
                                     else if (booking.status == BookingStatus.confirmed && booking.ticket != null)
                                       Builder(
