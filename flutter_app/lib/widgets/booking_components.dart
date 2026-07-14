@@ -27,57 +27,90 @@ class SeatWidget extends StatelessWidget {
 
     if (isBooked) {
       seatColor = const Color(0xFF1E1E2E); // Dark charcoal
-      icon = Icons.lock_outline;
+      icon = Icons.close_rounded; // Dấu X cho ghế đã đặt
     } else if (isHeld) {
-      seatColor = Colors.orange.withOpacity(0.6);
+      seatColor = Colors.orange;
       icon = Icons.person_outline;
     } else if (isMaintenance) {
       seatColor = Colors.grey.shade800;
       icon = Icons.construction; // Wrench/hammer icon
     } else if (isSelected) {
       seatColor = const Color(0xFF4ADE80); // Emerald Green
+      icon = Icons.check_rounded; // Dấu check cho ghế đang chọn
     } else {
       // Color according to SeatType
       if (seat.type == SeatType.vip) {
         seatColor = const Color(0xFFF97316); // Amber/Orange
       } else if (seat.type == SeatType.couple) {
         seatColor = const Color(0xFFEF4444); // Crimson Red
+        icon = Icons.favorite_rounded; // Trái tim cho ghế đôi
       } else {
         seatColor = Colors.white54; // Standard
       }
     }
 
-    return GestureDetector(
-      onTap: (isBooked || isMaintenance) ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+    final Widget innerContent = Center(
+      child: icon != null
+          ? Icon(
+              icon,
+              color: isBooked ? Colors.white24 : (isSelected ? Colors.black : Colors.white70),
+              size: 14,
+            )
+          : Text(
+              '${seat.number}',
+              style: TextStyle(
+                color: isSelected ? Colors.black : Colors.white70,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+    );
+
+    Widget seatBox;
+    if (seat.type == SeatType.vip && !isBooked && !isMaintenance && !isHeld && !isSelected) {
+      // Viền đôi cho ghế VIP khi chưa chọn
+      seatBox = Container(
+        width: 32,
+        height: 32,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          border: Border.all(color: seatColor, width: 1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: seatColor, width: 1.5),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: innerContent,
+        ),
+      );
+    } else {
+      seatBox = AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 32,
         height: 32,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? seatColor : Colors.transparent,
+          color: (isSelected || isBooked || isMaintenance || isHeld) ? seatColor : Colors.transparent,
           border: Border.all(
             color: seatColor,
             width: 2,
           ),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Center(
-          child: icon != null
-              ? Icon(
-                  icon,
-                  color: isBooked ? Colors.white24 : Colors.white70,
-                  size: 16,
-                )
-              : Text(
-                  '${seat.number}',
-                  style: TextStyle(
-                    color: isSelected ? Colors.black : Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-        ),
+        child: innerContent,
+      );
+    }
+
+    return GestureDetector(
+      onTap: (isBooked || isMaintenance) ? null : onTap,
+      child: AnimatedScale(
+        scale: isSelected ? 1.18 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutBack,
+        child: seatBox,
       ),
     );
   }

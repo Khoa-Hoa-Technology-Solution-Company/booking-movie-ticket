@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/api/app_exception.dart';
+import '../core/utils/promotion_validator.dart';
 import '../models/booking.dart';
 import '../models/food.dart';
 
@@ -74,28 +75,35 @@ class BookingService implements IBookingService {
             .from('promotions')
             .select()
             .eq('code', promotionCode)
-            .eq('active', true)
             .maybeSingle();
 
-        if (promoJson != null) {
-          final discountPercent = promoJson['discount_percent'] as int;
-          final maxDiscount = (promoJson['max_discount'] as num?)?.toDouble();
-          final minPurchase =
-              (promoJson['min_purchase'] as num?)?.toDouble() ?? 0.0;
-
-          if (totalAmount >= minPurchase) {
-            double discount = totalAmount * (discountPercent / 100);
-            if (maxDiscount != null && discount > maxDiscount) {
-              discount = maxDiscount;
-            }
-            totalAmount -= discount;
-
-            // Tăng lượt sử dụng của mã khuyến mãi qua RPC bảo mật
-            await _supabase.rpc('increment_promotion_usage', params: {
-              'p_code': promotionCode,
-            });
-          }
+        if (promoJson == null) {
+          throw DatabaseException('Mã khuyến mãi không tồn tại.');
         }
+
+        final validation = PromotionValidator.validate(
+          promo: promoJson,
+          purchaseAmount: totalAmount,
+          now: DateTime.now(),
+        );
+
+        if (!validation.isValid) {
+          throw DatabaseException(validation.errorMessage ?? 'Mã khuyến mãi không hợp lệ.');
+        }
+
+        final discountPercent = promoJson['discount_percent'] as int;
+        final maxDiscount = (promoJson['max_discount'] as num?)?.toDouble();
+
+        double discount = totalAmount * (discountPercent / 100);
+        if (maxDiscount != null && discount > maxDiscount) {
+          discount = maxDiscount;
+        }
+        totalAmount -= discount;
+
+        // Tăng lượt sử dụng của mã khuyến mãi qua RPC bảo mật
+        await _supabase.rpc('increment_promotion_usage', params: {
+          'p_code': promotionCode,
+        });
       }
 
       // 2.5. Cộng thêm tiền bắp nước (Food & Beverages)
@@ -141,16 +149,17 @@ class BookingService implements IBookingService {
   @override
   Future<Booking> confirmPayment(int bookingId) async {
     try {
-      await _supabase
-          .from('bookings')
-          .update({'status': 'CONFIRMED'})
-          .eq('id', bookingId);
-      await _supabase
-          .from('payments')
-          .update({'status': 'PAID'})
-          .eq('booking_id', bookingId);
+      final success = await _supabase.rpc(
+        'confirm_booking_payment',
+        params: {'p_booking_id': bookingId},
+      ) as bool;
+
+      if (!success) {
+        throw DatabaseException('Không thể xác nhận thanh toán ở hệ thống.');
+      }
       return await getBookingById(bookingId);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw DatabaseException('Thanh toán thất bại: $e');
     }
   }
@@ -158,16 +167,17 @@ class BookingService implements IBookingService {
   @override
   Future<Booking> cancelBooking(int bookingId) async {
     try {
-      await _supabase
-          .from('bookings')
-          .update({'status': 'CANCELLED'})
-          .eq('id', bookingId);
-      await _supabase
-          .from('payments')
-          .update({'status': 'FAILED'})
-          .eq('booking_id', bookingId);
+      final success = await _supabase.rpc(
+        'cancel_booking_payment',
+        params: {'p_booking_id': bookingId},
+      ) as bool;
+
+      if (!success) {
+        throw DatabaseException('Không thể huỷ đặt vé ở hệ thống.');
+      }
       return await getBookingById(bookingId);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw DatabaseException('Không thể hủy đặt vé: $e');
     }
   }

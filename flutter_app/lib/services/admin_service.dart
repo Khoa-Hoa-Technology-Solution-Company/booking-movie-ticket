@@ -13,7 +13,7 @@ abstract class IAdminService {
   Future<void> updateRoomLayout(int roomId, int totalRows, int totalColumns, List<Map<String, dynamic>> seats);
   Future<void> addShowtime(Map<String, dynamic> showtimeData);
   Future<void> deleteShowtime(int id);
-  Future<void> autoGenerateShowtimes(int days);
+  Future<void> autoGenerateShowtimes(int days, {List<int>? movieIds});
 
   // Analytics
   Future<Map<String, dynamic>> getAnalytics(DateTime start, DateTime end);
@@ -141,11 +141,13 @@ class AdminService implements IAdminService {
   }
 
   @override
-  Future<void> autoGenerateShowtimes(int days) async {
+  Future<void> autoGenerateShowtimes(int days, {List<int>? movieIds}) async {
     try {
-      await _supabase.rpc('generate_showtimes_for_next_days', params: {
-        'p_days_count': days,
-      });
+      final params = <String, dynamic>{'p_days_count': days};
+      if (movieIds != null && movieIds.isNotEmpty) {
+        params['p_movie_ids'] = movieIds;
+      }
+      await _supabase.rpc('generate_showtimes_for_next_days', params: params);
     } catch (e) {
       throw DatabaseException('Không thể tự động tạo lịch chiếu: $e');
     }

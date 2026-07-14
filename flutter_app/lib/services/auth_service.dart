@@ -13,6 +13,9 @@ abstract class IAuthService {
   /// Lấy thông tin user hiện tại đang đăng nhập
   Future<User?> get currentUser;
 
+  /// Lưu email đăng nhập/thao tác gần nhất để dùng cho 2FA
+  String? get lastAttemptedEmail;
+
   /// Đăng ký tài khoản mới bằng Email/Password
   Future<User> register({
     required String name,
@@ -62,6 +65,10 @@ abstract class IAuthService {
 
 class AuthService implements IAuthService {
   final _supabase = sb.Supabase.instance.client;
+  String? _lastAttemptedEmail;
+
+  @override
+  String? get lastAttemptedEmail => _lastAttemptedEmail;
 
   @override
   Stream<User?> get onAuthStateChanged {
@@ -153,6 +160,7 @@ class AuthService implements IAuthService {
     required String deviceName,
     required String userAgent,
   }) async {
+    _lastAttemptedEmail = email;
     try {
       // 1. Thực hiện đăng nhập qua Supabase Auth trước (để lấy session của user đó)
       final response = await _supabase.auth.signInWithPassword(
@@ -332,6 +340,9 @@ class AuthService implements IAuthService {
         throw AuthException('Đăng nhập bằng Google bị hủy.');
       }
 
+      final email = googleUser.email;
+      _lastAttemptedEmail = email;
+
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
@@ -363,8 +374,19 @@ class AuthService implements IAuthService {
         throw AuthException('Không thể khởi tạo thông tin người dùng.');
       }
 
+      // Kiểm tra 2FA
+      if (user.twoFactorEnabled) {
+        // Gửi OTP 2FA qua email
+        await _supabase.auth.signInWithOtp(email: email);
+        // Đăng xuất ngay lập tức để hủy session
+        await _supabase.auth.signOut();
+        // Ném lỗi yêu cầu 2FA
+        throw AuthException('Yêu cầu xác thực 2 bước (2FA).', '2fa_required');
+      }
+
       return user;
     } catch (e) {
+      if (e is AuthException) rethrow;
       throw AuthException('Đăng nhập bằng Google thất bại: $e');
     }
   }

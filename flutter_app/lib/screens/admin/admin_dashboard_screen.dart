@@ -7,6 +7,7 @@ import '../../services/admin_service.dart';
 import '../../services/movie_service.dart';
 import '../../models/movie.dart';
 import '../../models/showtime.dart';
+import '../../models/cinema.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -533,6 +534,14 @@ class _AdminShowtimesTab extends StatefulWidget {
 class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
   bool _isLoading = false;
   List<Showtime> _showtimes = [];
+  List<Cinema> _cinemas = [];
+  List<Movie> _movies = [];
+
+  // Bộ lọc & Phân trang
+  int? _selectedCinemaId;
+  int? _selectedMovieId;
+  int _currentPage = 1;
+  static const int _pageSize = 10;
 
   @override
   void initState() {
@@ -544,14 +553,49 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
     setState(() => _isLoading = true);
     try {
       final showtimes = await movieService.getShowtimes();
+      final cinemas = await movieService.getCinemas();
+      final moviesNow = await movieService.getNowShowing();
+      final moviesSoon = await movieService.getComingSoon();
+
       setState(() {
         _showtimes = showtimes;
+        _cinemas = cinemas;
+        _movies = [...moviesNow, ...moviesSoon];
+        _currentPage = 1; // Reset về trang 1
       });
     } catch (e) {
       _showSnackBar('Lỗi tải lịch chiếu: $e', Colors.red);
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  // Lọc lịch chiếu theo Rạp & Phim
+  List<Showtime> get _filteredShowtimes {
+    return _showtimes.where((st) {
+      final matchesCinema = _selectedCinemaId == null || st.cinema?.id == _selectedCinemaId;
+      final matchesMovie = _selectedMovieId == null || st.movie?.id == _selectedMovieId;
+      return matchesCinema && matchesMovie;
+    }).toList();
+  }
+
+  // Lịch chiếu phân trang
+  List<Showtime> get _paginatedShowtimes {
+    final filtered = _filteredShowtimes;
+    final startIndex = (_currentPage - 1) * _pageSize;
+    if (startIndex >= filtered.length) return [];
+
+    final endIndex = startIndex + _pageSize;
+    return filtered.sublist(
+      startIndex,
+      endIndex > filtered.length ? filtered.length : endIndex,
+    );
+  }
+
+  int get _totalPages {
+    final count = _filteredShowtimes.length;
+    if (count == 0) return 1;
+    return (count / _pageSize).ceil();
   }
 
   void _showSnackBar(String msg, Color color) {
@@ -603,43 +647,65 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
   }
 
   Future<void> _autoGenerateShowtimes() async {
-    final confirm = await showDialog<int>(
+    // Bước 1: Hiển thị dialog chọn phim (multi-select)
+    final selectedMovieIds = await showDialog<List<int>?>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162A),
-        title: const Text('Tạo Suất Chiếu Tự Động', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Hệ thống sẽ tự động phân bổ lịch chiếu cho toàn bộ phim đang chiếu (NOW_SHOWING) trong các ngày tiếp theo mà không bị trùng giờ. Hãy chọn số ngày muốn tạo:',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 0),
-            child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, 3),
-            child: const Text('3 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, 7),
-            child: const Text('7 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
-          ),
-        ],
-      ),
+      builder: (context) => _MovieSelectionDialog(movies: _movies),
     );
 
-    if (confirm != null && confirm > 0) {
-      setState(() => _isLoading = true);
-      try {
-        await adminService.autoGenerateShowtimes(confirm);
-        _showSnackBar('Đã tự động sinh lịch chiếu thành công cho $confirm ngày tới!', Colors.green);
-        _loadShowtimes();
-      } catch (e) {
-        _showSnackBar('Tạo lịch chiếu tự động thất bại: $e', Colors.red);
-      } finally {
-        setState(() => _isLoading = false);
-      }
+    // Nếu bấm hủy hoặc không chọn gì
+    if (selectedMovieIds == null) return;
+
+    // Bước 2: Chọn số ngày tạo lịch
+    final days = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        final movieCountText = selectedMovieIds.isEmpty
+            ? 'tất cả phim đang chiếu'
+            : '${selectedMovieIds.length} phim đã chọn';
+        return AlertDialog(
+          backgroundColor: const Color(0xFF16162A),
+          title: const Text('Chọn Số Ngày', style: TextStyle(color: Colors.white)),
+          content: Text(
+            'Tạo lịch chiếu tự động cho $movieCountText. Chọn số ngày:',
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 0),
+              child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 3),
+              child: const Text('3 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 7),
+              child: const Text('7 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (days == null || days <= 0) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await adminService.autoGenerateShowtimes(
+        days,
+        movieIds: selectedMovieIds.isEmpty ? null : selectedMovieIds,
+      );
+
+      final label = selectedMovieIds.isEmpty
+          ? 'tất cả phim đang chiếu'
+          : '${selectedMovieIds.length} phim đã chọn';
+      _showSnackBar('Đã tạo lịch chiếu $days ngày cho $label!', Colors.green);
+      _loadShowtimes();
+    } catch (e) {
+      _showSnackBar('Tạo lịch chiếu tự động thất bại: $e', Colors.red);
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -656,6 +722,8 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final paginated = _paginatedShowtimes;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
@@ -685,6 +753,8 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                           ],
                         ),
                         const SizedBox(height: 8),
+
+                        // Action Buttons Row
                         Row(
                           children: [
                             Expanded(
@@ -716,17 +786,87 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+
+                        // Filter Dropdowns
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<int?>(
+                                value: _selectedCinemaId,
+                                isExpanded: true,
+                                dropdownColor: const Color(0xFF16162A),
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                decoration: const InputDecoration(
+                                  labelText: 'Lọc theo Rạp',
+                                  labelStyle: TextStyle(color: Colors.white70, fontSize: 12),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Tất cả rạp', style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+                                  ),
+                                  ..._cinemas.map((c) => DropdownMenuItem<int?>(
+                                    value: c.id,
+                                    child: Text(c.name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+                                  )),
+                                ],
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedCinemaId = val;
+                                    _currentPage = 1;
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: DropdownButtonFormField<int?>(
+                                value: _selectedMovieId,
+                                isExpanded: true,
+                                dropdownColor: const Color(0xFF16162A),
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                decoration: const InputDecoration(
+                                  labelText: 'Lọc theo Phim',
+                                  labelStyle: TextStyle(color: Colors.white70, fontSize: 12),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Tất cả phim', style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+                                  ),
+                                  ..._movies.map((m) => DropdownMenuItem<int?>(
+                                    value: m.id,
+                                    child: Text(m.title, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+                                  )),
+                                ],
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedMovieId = val;
+                                    _currentPage = 1;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
+
+                  // Paginated Showtimes List View
                   Expanded(
-                    child: _showtimes.isEmpty
-                        ? const Center(child: Text('Chưa có suất chiếu nào', style: TextStyle(color: Colors.white54)))
+                    child: paginated.isEmpty
+                        ? const Center(child: Text('Không có suất chiếu nào phù hợp bộ lọc', style: TextStyle(color: Colors.white54)))
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _showtimes.length,
+                            itemCount: paginated.length,
                             itemBuilder: (context, index) {
-                              final st = _showtimes[index];
+                              final st = paginated[index];
                               final movieTitle = st.movie?.title ?? 'Phim';
                               final startStr = DateFormat('dd/MM/yyyy HH:mm').format(st.startTime);
                               final endStr = DateFormat('HH:mm').format(st.endTime);
@@ -753,9 +893,189 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                             },
                           ),
                   ),
+
+                  // Pagination controls bar
+                  if (_filteredShowtimes.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 16),
+                            onPressed: _currentPage > 1
+                                ? () => setState(() => _currentPage--)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Trang $_currentPage / $_totalPages',
+                            style: GoogleFonts.robotoMono(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+                            onPressed: _currentPage < _totalPages
+                                ? () => setState(() => _currentPage++)
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
+    );
+  }
+}
+
+// === DIALOG CHỌN PHIM ĐỂ TẠO LỊCH TỰ ĐỘNG ===
+class _MovieSelectionDialog extends StatefulWidget {
+  final List<Movie> movies;
+  const _MovieSelectionDialog({required this.movies});
+
+  @override
+  State<_MovieSelectionDialog> createState() => _MovieSelectionDialogState();
+}
+
+class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
+  final Set<int> _selectedIds = {};
+  bool _selectAll = true; // Mặc định chọn tất cả
+
+  @override
+  Widget build(BuildContext context) {
+    final nowShowingMovies = widget.movies
+        .where((m) => m.status == MovieStatus.nowShowing)
+        .toList();
+
+    return AlertDialog(
+      backgroundColor: const Color(0xFF16162A),
+      title: const Text('Chọn Phim Tạo Lịch', style: TextStyle(color: Colors.white, fontSize: 16)),
+      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Toggle tất cả
+            CheckboxListTile(
+              value: _selectAll,
+              onChanged: (val) {
+                setState(() {
+                  _selectAll = val ?? true;
+                  if (_selectAll) {
+                    _selectedIds.clear();
+                  }
+                });
+              },
+              title: const Text(
+                '✨ Tất cả phim đang chiếu',
+                style: TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              activeColor: const Color(0xFFC084FC),
+              checkColor: Colors.black,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            const Divider(color: Colors.white12),
+
+            if (!_selectAll) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Chọn phim cụ thể (${_selectedIds.length}/${nowShowingMovies.length}):',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+              ),
+            ],
+
+            // Danh sách phim
+            Expanded(
+              child: _selectAll
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.select_all_rounded, size: 48, color: Color(0xFFC084FC)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Sẽ tạo lịch cho ${nowShowingMovies.length} phim đang chiếu',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: nowShowingMovies.length,
+                      itemBuilder: (context, index) {
+                        final movie = nowShowingMovies[index];
+                        final isChecked = _selectedIds.contains(movie.id);
+
+                        return CheckboxListTile(
+                          value: isChecked,
+                          onChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedIds.add(movie.id);
+                              } else {
+                                _selectedIds.remove(movie.id);
+                              }
+                            });
+                          },
+                          title: Text(
+                            movie.title,
+                            style: TextStyle(
+                              color: isChecked ? Colors.white : Colors.white70,
+                              fontWeight: isChecked ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            '${movie.duration} phút',
+                            style: const TextStyle(color: Colors.white38, fontSize: 11),
+                          ),
+                          activeColor: const Color(0xFFC084FC),
+                          checkColor: Colors.black,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+        ),
+        TextButton(
+          onPressed: (!_selectAll && _selectedIds.isEmpty)
+              ? null
+              : () {
+                  if (_selectAll) {
+                    Navigator.pop(context, <int>[]); // Danh sách rỗng = tất cả phim
+                  } else {
+                    Navigator.pop(context, _selectedIds.toList());
+                  }
+                },
+          child: Text(
+            'Tiếp tục',
+            style: TextStyle(
+              color: (!_selectAll && _selectedIds.isEmpty)
+                  ? Colors.white24
+                  : const Color(0xFFC084FC),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

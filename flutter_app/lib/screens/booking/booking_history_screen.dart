@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../config/payment_config.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
+import '../../core/theme/app_theme.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   final int currentTabIndex;
@@ -524,55 +527,13 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   void _showTicketDialog(Booking booking) {
-    final ticket = booking.ticket;
-    final String ticketCode = ticket?.ticketCode ?? '';
-
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E1B4B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.confirmation_number, color: Color(0xFFC084FC), size: 50),
-              const SizedBox(height: 12),
-              const Text('Vé Xem Phim', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 20),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(12),
-                  height: 180,
-                  width: 180,
-                  child: QrImageView(
-                    data: ticketCode,
-                    version: QrVersions.auto,
-                    size: 180.0,
-                    gapless: false,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'MÃ VÉ: $ticketCode',
-                style: const TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.2),
-              ),
-              const SizedBox(height: 8),
-              const Text('Vui lòng đưa mã này tại quầy soát vé để vào phòng chiếu', style: TextStyle(color: Colors.white54, fontSize: 11), textAlign: TextAlign.center),
-            ],
-          ),
-          actions: [
-            Center(
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC084FC), foregroundColor: Colors.black),
-                child: const Text('Đóng'),
-              ),
-            ),
-          ],
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: _TicketDialogContent(booking: booking),
         );
       },
     );
@@ -695,133 +656,430 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                          : const Color(0xFFC084FC),
                                      fontSize: 12,
                                      fontWeight: FontWeight.bold,
-                                   ),
-                                 ),
-                                const SizedBox(height: 6),
-                                
-                                // Seat list
-                                Text('Danh sách ghế: $seatNames', style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                                if (booking.orderItems != null && booking.orderItems!.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Bắp nước: ${booking.orderItems!.map((item) => '${item.itemName} (x${item.quantity})').join(', ')}',
-                                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                                  ),
-                                ],
-                                const SizedBox(height: 12),
-                                
-                                const Divider(color: Colors.white10),
-                                const SizedBox(height: 8),
-                                
-                                // Pricing and Action Buttons
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text('Tổng tiền:', style: TextStyle(color: Colors.white38, fontSize: 11)),
-                                        Text(formatter.format(totalAmount), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                                      ],
                                     ),
-                                    
-                                    // ✅ Actions theo trạng thái:
-                                    // - PENDING + suất chiếu chưa qua → Hủy + Thanh Toán
-                                    // - PENDING + suất chiếu ĐÃ QUA → Badge "Hết Hạn" (không cho thanh toán)
-                                    // - CONFIRMED → Xem QR
-                                    if (booking.status == BookingStatus.pending && !isShowtimePast)
-                                      Row(
-                                        children: [
-                                          TextButton(
-                                            onPressed: () => _handleCancel(booking.id),
-                                            child: const Text('Hủy', style: TextStyle(color: Colors.redAccent)),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          ElevatedButton(
-                                            onPressed: () => _handlePayment(booking.id, totalAmount),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                            ),
-                                            child: const Text('Thanh Toán', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                          ),
-                                        ],
-                                      )
-                                    else if (booking.status == BookingStatus.pending && isShowtimePast)
-                                      // Pending nhưng suất đã qua → hiện hết hạn
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.event_busy_rounded, size: 13, color: Colors.grey.shade500),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              'Hết Hạn',
-                                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else if (booking.status == BookingStatus.confirmed && booking.ticket != null)
-                                      Builder(
-                                        builder: (context) {
-                                          final ticket = booking.ticket!;
-                                          if (ticket.status == TicketStatus.used) {
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.white24),
-                                              ),
-                                              child: const Text(
-                                                'Vé Đã Sử Dụng',
-                                                style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
-                                              ),
-                                            );
-                                          } else if (ticket.status == TicketStatus.expired) {
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade900,
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                'Vé Đã Hết Hạn',
-                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold),
-                                              ),
-                                            );
-                                          } else {
-                                            return ElevatedButton.icon(
-                                              onPressed: () {
-                                                _showTicketDialog(booking);
-                                              },
-                                              icon: const Icon(Icons.qr_code, size: 16),
-                                              label: const Text('Xem Vé QR', style: TextStyle(fontSize: 12)),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFFC084FC),
-                                                foregroundColor: Colors.black,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                                  ),
+                                 const SizedBox(height: 6),
+                                 
+                                 // Seat list
+                                 Text('Danh sách ghế: $seatNames', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                 if (booking.orderItems != null && booking.orderItems!.isNotEmpty) ...[
+                                   const SizedBox(height: 6),
+                                   Text(
+                                     'Bắp nước: ${booking.orderItems!.map((item) => '${item.itemName} (x${item.quantity})').join(', ')}',
+                                     style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                   ),
+                                 ],
+                                 const SizedBox(height: 12),
+                                 
+                                 const Divider(color: Colors.white10),
+                                 const SizedBox(height: 8),
+                                 
+                                 // Pricing and Action Buttons
+                                 Row(
+                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                   children: [
+                                     Column(
+                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                       children: [
+                                         const Text('Tổng tiền:', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                                         Text(formatter.format(totalAmount), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                       ],
+                                     ),
+                                     
+                                     // ✅ Actions theo trạng thái:
+                                     // - PENDING + suất chiếu chưa qua → Hủy + Thanh Toán
+                                     // - PENDING + suất chiếu ĐÃ QUA → Badge "Hết Hạn" (không cho thanh toán)
+                                     // - CONFIRMED → Xem QR
+                                     if (booking.status == BookingStatus.pending && !isShowtimePast)
+                                       Row(
+                                         children: [
+                                           TextButton(
+                                             onPressed: () => _handleCancel(booking.id),
+                                             child: const Text('Hủy', style: TextStyle(color: Colors.redAccent)),
+                                           ),
+                                           const SizedBox(width: 8),
+                                           ElevatedButton(
+                                             onPressed: () => _handlePayment(booking.id, totalAmount),
+                                             style: ElevatedButton.styleFrom(
+                                               backgroundColor: Colors.green,
+                                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                             ),
+                                             child: const Text('Thanh Toán', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                           ),
+                                         ],
+                                       )
+                                     else if (booking.status == BookingStatus.pending && isShowtimePast)
+                                       // Pending nhưng suất đã qua → hiện hết hạn
+                                       Container(
+                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                         decoration: BoxDecoration(
+                                           color: Colors.grey.withOpacity(0.12),
+                                           borderRadius: BorderRadius.circular(8),
+                                           border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                                         ),
+                                         child: Row(
+                                           mainAxisSize: MainAxisSize.min,
+                                           children: [
+                                             Icon(Icons.event_busy_rounded, size: 13, color: Colors.grey.shade500),
+                                             const SizedBox(width: 5),
+                                             Text(
+                                               'Hết Hạn',
+                                               style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
+                                             ),
+                                           ],
+                                         ),
+                                       )
+                                     else if (booking.status == BookingStatus.confirmed && booking.ticket != null)
+                                       Builder(
+                                         builder: (context) {
+                                           final ticket = booking.ticket!;
+                                           if (ticket.status == TicketStatus.used) {
+                                             return Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: Colors.grey.withOpacity(0.1),
+                                                 borderRadius: BorderRadius.circular(8),
+                                                 border: Border.all(color: Colors.white24),
+                                               ),
+                                               child: const Text(
+                                                 'Vé Đã Sử Dụng',
+                                                 style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
+                                               ),
+                                             );
+                                           } else if (ticket.status == TicketStatus.expired) {
+                                             return Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: Colors.grey.shade900,
+                                                 borderRadius: BorderRadius.circular(8),
+                                               ),
+                                               child: Text(
+                                                 'Vé Đã Hết Hạn',
+                                                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold),
+                                               ),
+                                             );
+                                           } else {
+                                             return ElevatedButton.icon(
+                                               onPressed: () {
+                                                 _showTicketDialog(booking);
+                                               },
+                                               icon: const Icon(Icons.qr_code, size: 16),
+                                               label: const Text('Xem Vé QR', style: TextStyle(fontSize: 12)),
+                                               style: ElevatedButton.styleFrom(
+                                                 backgroundColor: const Color(0xFFC084FC),
+                                                 foregroundColor: Colors.black,
+                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                               ),
+                                             );
+                                           }
+                                         },
+                                       ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                           ),
+                         );
+                       },
+                     ),
+             ),
+     );
+   }
+}
+
+/// Giao diện thiết kế Vé vật lý bằng Clipper cắt góc lẹm răng cưa ở hai bên cuống vé
+class TicketClipper extends CustomClipper<Path> {
+  final double punchRadius;
+  final double punchPositionY; // Tỷ lệ vị trí lẹm của vé từ đỉnh xuống (ví dụ: 0.6)
+
+  TicketClipper({this.punchRadius = 10.0, this.punchPositionY = 0.58});
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final double py = size.height * punchPositionY;
+
+    // Bắt đầu từ góc trên bên trái
+    path.moveTo(0.0, 0.0);
+    // Đường ngang trên
+    path.lineTo(size.width, 0.0);
+    // Đi xuống cạnh phải tới trước vết xé cuống vé
+    path.lineTo(size.width, py - punchRadius);
+    // Vẽ nửa hình tròn khoét sâu vào trong vé (Cạnh phải)
+    path.arcToPoint(
+      Offset(size.width, py + punchRadius),
+      radius: Radius.circular(punchRadius),
+      clockwise: false,
+    );
+    // Đi tiếp xuống góc dưới bên phải
+    path.lineTo(size.width, size.height);
+    // Đường ngang dưới
+    path.lineTo(0.0, size.height);
+    // Đi lên cạnh trái tới vết xé cuống vé
+    path.lineTo(0.0, py + punchRadius);
+    // Vẽ nửa hình tròn khoét sâu vào trong vé (Cạnh trái)
+    path.arcToPoint(
+      Offset(0.0, py - punchRadius),
+      radius: Radius.circular(punchRadius),
+      clockwise: false,
+    );
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+/// Hỗ trợ vẽ đường đứt nét (dashed line) chia cắt thân vé và cuống vé
+class TicketSeparatorPainter extends CustomPainter {
+  final Color color;
+  final double width;
+
+  TicketSeparatorPainter({this.color = Colors.white24, this.width = 1.5});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke;
+
+    const double dashWidth = 5.0;
+    const double dashSpace = 4.0;
+    double startX = 0.0;
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// Widget Stateful quản lý giao diện cuống vé và tự động tăng 100% độ sáng màn hình
+class _TicketDialogContent extends StatefulWidget {
+  final Booking booking;
+
+  const _TicketDialogContent({required this.booking});
+
+  @override
+  State<_TicketDialogContent> createState() => _TicketDialogContentState();
+}
+
+class _TicketDialogContentState extends State<_TicketDialogContent> {
+  double? _originalBrightness;
+
+  @override
+  void initState() {
+    super.initState();
+    _setFullBrightness();
+  }
+
+  Future<void> _setFullBrightness() async {
+    try {
+      _originalBrightness = await ScreenBrightness().application;
+      await ScreenBrightness().setApplicationScreenBrightness(1.0);
+    } catch (e) {
+      debugPrint('Lỗi khi thiết lập độ sáng 100%: $e');
+    }
+  }
+
+  Future<void> _resetBrightness() async {
+    try {
+      if (_originalBrightness != null) {
+        await ScreenBrightness().setApplicationScreenBrightness(_originalBrightness!);
+      } else {
+        await ScreenBrightness().resetApplicationScreenBrightness();
+      }
+    } catch (e) {
+      debugPrint('Lỗi khi khôi phục độ sáng màn hình: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _resetBrightness();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final booking = widget.booking;
+    final showtime = booking.showtime;
+    final movie = showtime?.movie;
+    final room = showtime?.room;
+    final cinema = showtime?.cinema;
+    final seats = booking.seats ?? [];
+
+    final String movieTitle = movie?.title ?? 'Phim';
+    final String cinemaName = cinema?.name ?? 'Rạp';
+    final String roomName = room?.name ?? 'Phòng';
+    final String dateStr = showtime != null 
+        ? DateFormat('dd/MM/yyyy HH:mm').format(showtime.startTime)
+        : '';
+    final String seatNames = seats.map((s) => '${s.row}${s.number}').join(', ');
+    final String ticketCode = booking.ticket?.ticketCode ?? '';
+
+    return ClipPath(
+      clipper: TicketClipper(punchRadius: 12.0, punchPositionY: 0.58),
+      child: Container(
+        width: 320,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1B4B), // Elevated Indigo surface
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // === PHẦN THÂN VÉ (Thông tin chi tiết suất chiếu) ===
+            Padding(
+              padding: const EdgeInsets.all(22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'VÉ XEM PHIM',
+                        style: GoogleFonts.robotoMono(
+                          color: const Color(0xFFC084FC),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Tên Phim (Bold và Lớn)
+                  Text(
+                    movieTitle,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      height: 1.2,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Chi tiết cụ thể
+                  _buildTicketInfoRow('RẠP & PHÒNG CHIẾU', '$cinemaName - $roomName (${room?.roomType ?? '2D'})'),
+                  const SizedBox(height: 12),
+                  _buildTicketInfoRow('THỜI GIAN CHIẾU', dateStr),
+                  const SizedBox(height: 12),
+                  _buildTicketInfoRow('SỐ GHẾ ĐÃ ĐẶT', seatNames),
+                  
+                  if (booking.orderItems != null && booking.orderItems!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildTicketInfoRow(
+                      'BẮP NƯỚC KÈM THEO',
+                      booking.orderItems!.map((item) => '${item.itemName} (x${item.quantity})').join(', '),
+                    ),
+                  ],
+                ],
+              ),
             ),
+
+            // === ĐƯỜNG RĂNG CƯA PHÂN TÁCH CUỐNG VÉ ===
+            CustomPaint(
+              size: const Size(double.infinity, 1),
+              painter: TicketSeparatorPainter(color: Colors.white12, width: 1.5),
+            ),
+
+            // === PHẦN CUỐNG VÉ (Mã QR Code Soát Vé) ===
+            Padding(
+              padding: const EdgeInsets.all(22.0),
+              child: Column(
+                children: [
+                  // QR Code bọc trong hộp trắng tương phản cực cao
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFC084FC), width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFC084FC).withOpacity(0.2),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    width: 170,
+                    height: 170,
+                    child: QrImageView(
+                      data: ticketCode,
+                      version: QrVersions.auto,
+                      size: 170.0,
+                      gapless: false,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  
+                  // Mã String của Vé
+                  Text(
+                    'MÃ VÉ: $ticketCode',
+                    style: GoogleFonts.robotoMono(
+                      color: const Color(0xFFC084FC),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Trình mã này tại quầy để soát vé vào phòng',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF6B6B8A),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTicketInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.robotoMono(
+            color: const Color(0xFF6B6B8A), // textMuted
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 13.5,
+          ),
+        ),
+      ],
     );
   }
 }

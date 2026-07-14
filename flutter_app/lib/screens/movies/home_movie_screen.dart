@@ -7,6 +7,8 @@ import '../../models/cinema.dart';
 import '../../services/movie_service.dart';
 import 'movie_detail_screen.dart';
 import 'movie_list_screen.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../services/location_service.dart';
 
 class HomeMovieScreen extends StatefulWidget {
   const HomeMovieScreen({super.key});
@@ -19,6 +21,11 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
   bool _isLoading = false;
   List<Movie> _nowShowing = [];
   List<Cinema> _cinemas = [];
+
+  // Định vị người dùng & API Khoảng cách rạp
+  Position? _userPosition;
+  Map<int, CinemaDistanceResult> _cinemaDistances = {};
+  bool _isLocating = false;
 
   // Auto-scroll carousel
   final PageController _bannerController = PageController();
@@ -79,6 +86,9 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
         _nowShowing = movies;
         _cinemas = cinemas;
       });
+
+      // Lấy vị trí và tính khoảng cách song song sau khi đã load xong thông tin cơ bản
+      _fetchLocationAndDistances(cinemas);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,6 +97,38 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchLocationAndDistances(List<Cinema> cinemas) async {
+    if (mounted) setState(() => _isLocating = true);
+    try {
+      final pos = await LocationService.instance.getCurrentPosition();
+      if (pos != null && mounted) {
+        final distances = await LocationService.instance.calculateDistances(
+          userLat: pos.latitude,
+          userLng: pos.longitude,
+          cinemas: cinemas,
+        );
+
+        if (mounted) {
+          setState(() {
+            _userPosition = pos;
+            _cinemaDistances = distances;
+
+            // Sắp xếp danh sách rạp theo khoảng cách từ gần đến xa
+            _cinemas.sort((a, b) {
+              final distA = _cinemaDistances[a.id]?.distanceKm ?? double.infinity;
+              final distB = _cinemaDistances[b.id]?.distanceKm ?? double.infinity;
+              return distA.compareTo(distB);
+            });
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi xử lý khoảng cách rạp: $e');
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
     }
   }
 
@@ -156,9 +198,22 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
               const SizedBox(height: AppSpacing.xl),
 
               // === CINEMAS SECTION ===
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.base),
-                child: Text('Rạp Phim Liên Kết', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
+                child: Row(
+                  children: [
+                    const Text('Rạp Phim Liên Kết', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 8),
+                    if (_isLocating)
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      )
+                    else if (_userPosition != null)
+                      const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 14),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               _isLoading ? _buildCinemaShimmerList() : _buildCinemaList(),
@@ -317,7 +372,13 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
       itemCount: _cinemas.length,
-      itemBuilder: (context, i) => _CinemaListTile(cinema: _cinemas[i]),
+      itemBuilder: (context, i) {
+        final cinema = _cinemas[i];
+        return _CinemaListTile(
+          cinema: cinema,
+          distanceResult: _cinemaDistances[cinema.id],
+        );
+      },
     );
   }
 
@@ -402,7 +463,12 @@ class _MoviePosterCard extends StatelessWidget {
 // === CINEMA LIST TILE ===
 class _CinemaListTile extends StatelessWidget {
   final Cinema cinema;
-  const _CinemaListTile({required this.cinema});
+  final CinemaDistanceResult? distanceResult;
+  
+  const _CinemaListTile({
+    required this.cinema,
+    this.distanceResult,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -413,23 +479,56 @@ class _CinemaListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         side: const BorderSide(color: AppColors.border),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: Container(
-          width: 44, height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primaryDim,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.movie_creation_outlined, color: AppColors.primary, size: 22),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            // Icon rạp
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primaryDim,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.movie_creation_outlined, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            // Thông tin rạp
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(cinema.name, style: AppTextStyles.bodyBold, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 3),
+                  Text(cinema.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.caption),
+                  if (distanceResult != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 11),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Badge thành phố
+            AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
+          ],
         ),
-        title: Text(cinema.name, style: AppTextStyles.bodyBold),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 3),
-          child: Text(cinema.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.caption),
-        ),
-        trailing: AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
-        onTap: () {},
       ),
     );
   }

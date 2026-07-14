@@ -48,3 +48,7 @@ flutter_app/build/
 flutter_app/android/local.properties
 flutter_app/ios/Flutter/Generated.xcconfig
 flutter_app/ios/Flutter/flutter_export_environment.sh
+
+# Android heap dump files
+*.hprof
+*.log

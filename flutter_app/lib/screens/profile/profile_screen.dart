@@ -67,13 +67,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(context);
               setState(() => _isLoading = true);
               await authService.logout();
-              if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
             child: const Text('Đăng Xuất', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -116,14 +115,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 setDialogState(() => isSaving = true);
                 try {
                   await userService.updateProfile(name: controller.text.trim());
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã cập nhật tên thành công!'), backgroundColor: AppColors.success));
-                    _loadProfileData();
-                  }
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã cập nhật tên thành công!'), backgroundColor: AppColors.success));
+                  _loadProfileData();
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Thất bại: $e'), backgroundColor: AppColors.danger));
                 } finally {
                   setDialogState(() => isSaving = false);
@@ -184,13 +183,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     currentPassword: currentPwCtrl.text,
                     newPassword: newPwCtrl.text,
                   );
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: AppColors.success));
-                  }
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: AppColors.success));
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Thất bại: $e'), backgroundColor: AppColors.danger));
                 } finally {
                   setDialogState(() => isSaving = false);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/movie.dart';
 import '../../services/movie_service.dart';
@@ -151,15 +152,24 @@ class _MovieGridCard extends StatelessWidget {
                   children: [
                     Container(color: AppColors.surfaceHigh),
                     if (posterUrl.isNotEmpty)
-                      Image.network(posterUrl, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                      CachedNetworkImage(
+                        imageUrl: posterUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const ShimmerBox(
+                          width: double.infinity,
+                          height: double.infinity,
+                          radius: AppRadius.card,
+                        ),
+                        errorWidget: (context, url, error) => Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft, end: Alignment.bottomRight,
                               colors: [Color(0xFF1E1B4B), Colors.black],
                             ),
                           ),
-                          child: const Center(child: Icon(Icons.movie_rounded, size: 42, color: AppColors.textMuted)),
+                          child: const Center(
+                            child: Icon(Icons.movie_rounded, size: 42, color: AppColors.textMuted),
+                          ),
                         ),
                       ),
                     // Gradient bottom

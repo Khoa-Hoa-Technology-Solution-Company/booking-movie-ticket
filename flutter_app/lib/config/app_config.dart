@@ -5,6 +5,17 @@ class AppConfig {
   static const String _localHostUrl = 'http://localhost:5000/api';
   static const String _overrideUrl = String.fromEnvironment('API_BASE_URL');
 
+  // Goong Maps API Keys
+  static const String goongApiKey = String.fromEnvironment(
+    'GOONG_API_KEY',
+    defaultValue: '37iKAeZwJUTFhUQVQeUtCoHmrV0bOOQRYg0OYd4J',
+  );
+  
+  static const String goongMapKey = String.fromEnvironment(
+    'GOONG_MAP_KEY',
+    defaultValue: 'wFTLjGnB87PcmETJapSjSKh3iZ1pdGgLa0bvHz4x',
+  );
+
   // Tự động phân tích môi trường:
   // - Nếu có `--dart-define=API_BASE_URL=...` thì ưu tiên URL đó
   // - Nếu chạy trên Web (Chrome/Edge): sử dụng localhost

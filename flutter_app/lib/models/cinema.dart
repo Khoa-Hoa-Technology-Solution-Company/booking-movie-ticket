@@ -4,6 +4,8 @@ class Cinema {
   final String address;
   final String city;
   final String? imageUrl;
+  final double? latitude;
+  final double? longitude;
 
   const Cinema({
     required this.id,
@@ -11,6 +13,8 @@ class Cinema {
     required this.address,
     required this.city,
     this.imageUrl,
+    this.latitude,
+    this.longitude,
   });
 
   factory Cinema.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class Cinema {
       address: json['address'] as String? ?? '',
       city: json['city'] as String? ?? '',
       imageUrl: json['image_url'] as String?,
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 
@@ -30,6 +36,8 @@ class Cinema {
       'address': address,
       'city': city,
       'image_url': imageUrl,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 }

@@ -91,7 +91,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       await authService.loginWithGoogle();
       if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const App()));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.danger));
+      if (mounted) {
+        final is2FA = e is AuthException && e.code == '2fa_required';
+        if (!is2FA) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: AppColors.danger),
+          );
+        } else {
+          final targetEmail = authService.lastAttemptedEmail ?? '';
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => Verify2FAScreen(email: targetEmail)),
+          );
+        }
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
