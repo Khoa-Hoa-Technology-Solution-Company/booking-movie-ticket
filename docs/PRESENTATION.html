@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thuyết Trình Project PRM: Movie Ticket Booking App</title>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts Outfit & Space Grotesk -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Grotesk:wght@400;700&family=Roboto+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #C084FC;
+            --color-primary-dim: rgba(192, 132, 252, 0.15);
+            --color-secondary: #8B5CF6;
+            --color-background: #0F0F1A;
+            --color-surface: #16162A;
+            --color-surface-high: #1E1B4B;
+            --color-border: rgba(255, 255, 255, 0.08);
+            --color-text-primary: #FFFFFF;
+            --color-text-secondary: #B3B3CC;
+            --color-text-muted: #6B6B8A;
+            --color-success: #10B981;
+            --color-danger: #EF4444;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-body: 'Outfit', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text-primary);
+            font-family: var(--font-body);
+            overflow: hidden;
+        }
+
+        /* 16:9 Aspect Ratio Container (desktop) */
+        .slide-deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0f0f1a 100%);
+        }
+
+        @media (min-width: 769px) {
+            .slide-deck {
+                max-width: calc(100vh * 16 / 9);
+                max-height: calc(100vw * 9 / 16);
+                margin: auto;
+                position: absolute;
+                inset: 0;
+                border: 1px solid var(--color-border);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                border-radius: 12px;
+            }
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 60px 55px 60px;
+            /* Less top padding, bottom padded for nav */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: scale(0.98);
+            overflow: hidden;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+        }
+
+        .slide-title {
+            font-size: clamp(32px, 4vw, 54px);
+            background: linear-gradient(135deg, var(--color-primary), #EC4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .slide-subtitle {
+            font-size: clamp(14px, 1.8vw, 20px);
+            color: var(--color-text-secondary);
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        p,
+        li {
+            font-size: clamp(14px, 1.6vw, 20px);
+            color: var(--color-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Layout Grid Helpers */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .grid-2-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            width: 100%;
+            align-items: center;
+            margin: auto 0;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        @media (max-width: 900px) {
+            .grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .grid-6 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin: auto 0;
+        }
+
+        @media (max-width: 768px) {
+            .grid-6 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid-6 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: left;
+            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-primary);
+            box-shadow: 0 10px 20px -5px rgba(192, 132, 252, 0.15);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: var(--color-primary);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text-primary);
+        }
+
+        .card-accent-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+        }
+
+        /* Badges & Code blocks */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--color-primary-dim);
+            color: var(--color-primary);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            font-family: var(--font-mono);
+            background: #0B0B13;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #A5F3FC;
+            border-left: 3px solid var(--color-primary);
+            text-align: left;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        /* Animations */
+        .animate-fade-up {
+            animation: fadeUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .animate-scale {
+            animation: scaleIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-8px);
+            }
+            60% {
+                transform: translateY(-4px);
+            }
+        }
+
+        /* Navigation Controls */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            transition: width 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        .nav-controls {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            background: rgba(22, 22, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid var(--color-border);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--color-text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .nav-btn:hover {
+            color: var(--color-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .slide-counter {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            font-family: var(--font-mono);
+        }
+
+        /* Special elements */
+        .avatar-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            width: 100%;
+        }
+
+        .avatar-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--color-primary-dim);
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .avatar-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .avatar-info p {
+            font-size: 12px;
+            color: var(--color-text-muted);
+        }
+
+        /* Tech Stack Visual Cards */
+        .tech-stack-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .tech-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--color-border);
+            padding: 10px 14px;
+            border-radius: 12px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+        }
+
+        .tech-card:hover {
+            transform: translateX(6px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--color-glow);
+            box-shadow: 0 4px 16px -4px var(--color-glow-dim);
+        }
+
+        .tech-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .tech-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .tech-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .tech-card-desc {
+            font-size: 12.5px;
+            color: var(--color-text-secondary);
+            line-height: 1.35;
+        }
+
+        .tech-card.flutter {
+            --color-glow: #38BDF8;
+            --color-glow-dim: rgba(56, 189, 248, 0.25);
+        }
+
+        .tech-card.supabase {
+            --color-glow: #34D399;
+            --color-glow-dim: rgba(52, 211, 153, 0.25);
+        }
+
+        .tech-card.postgres {
+            --color-glow: #60A5FA;
+            --color-glow-dim: rgba(96, 165, 250, 0.25);
+        }
+
+        .tech-card.goong {
+            --color-glow: #F87171;
+            --color-glow-dim: rgba(248, 113, 113, 0.25);
+        }
+
+        .tech-card.security {
+            --color-glow: #C084FC;
+            --color-glow-dim: rgba(192, 132, 252, 0.25);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Presentation Viewport Container -->
+    <div class="slide-deck">
+
+        <!-- SLIDE 1: GIỚI THIỆU TỔNG QUAN DỰ ÁN -->
+        <div class="slide active">
+            <div class="slide-content" style="justify-content: center; gap: 24px;">
+                <span class="badge" style="font-size: 14px; padding: 6px 14px;">🎓 DỰ ÁN MÔN HỌC PRM393</span>
+                <h1 class="slide-title" style="font-size: clamp(36px, 5.5vw, 68px);">Movie Ticket Booking App</h1>
+                <p class="slide-subtitle" style="max-width: 650px;">
+                    Ứng dụng đặt vé xem phim thông minh.
+                </p>
+                <div style="height: 1px; width: 100px; background: var(--color-border); margin: 10px 0;"></div>
+                <div
+                    style="font-family: var(--font-mono); font-size: 18px; color: var(--color-primary); font-weight: bold;">
+                    Thực hiện: Nhóm 4
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: KIẾN TRÚC HỆ THỐNG & CÔNG NGHỆ (TECH STACK) -->
+        <div class="slide">
+            <div class="slide-content">
+                <div>
+                    <h2 class="slide-title">Kiến trúc hệ thống & Công nghệ (Tech Stack)</h2>
+                    <p class="slide-subtitle">Sự kết hợp giữa Supabase Cloud BaaS và ứng dụng Flutter di động</p>
+                </div>
+
+                <div class="grid-2-split animate-scale" style="align-items: center; gap: 30px;">
+                    <!-- Column 1: Tech Stack Details -->
+                    <div class="tech-stack-list">
+                        <div class="tech-card flutter">
+                            <div class="tech-card-icon" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8;">📱
+                            </div>
+                            <div class="tech-card-info">
+                                <span class="tech-card-title">Frontend: Flutter SDK & Dart</span>
+                                <span class="tech-card-desc">UI thiết kế Material 3 Dark Theme cao cấp, vẽ vé
+                                    CustomPainter.</span>
+                            </div>
+                        </div>
+                        <div class="tech-card supabase">
+                            <div class="tech-card-icon" style="background: rgba(52, 211, 153, 0.1); color: #34D399;">☁️
+                            </div>
+                            <div class="tech-card-info">
+                                <span class="tech-card-title">Backend: Supabase Cloud BaaS</span>
+                                <span class="tech-card-desc">Xác thực người dùng (Supabase Auth), Storage hình ảnh và đồng bộ realtime giữ ghế.</span>
+                            </div>
+                        </div>
+                        <div class="tech-card postgres">
+                            <div class="tech-card-icon" style="background: rgba(96, 165, 250, 0.1); color: #60A5FA;">🗄️
+                            </div>
+                            <div class="tech-card-info">
+                                <span class="tech-card-title">Database: PostgreSQL Engine</span>
+                                <span class="tech-card-desc">Lưu trữ quan hệ đồng bộ trực tiếp qua SDK Client.</span>
+                            </div>
+                        </div>
+                        <div class="tech-card goong">
+                            <div class="tech-card-icon" style="background: rgba(248, 113, 113, 0.1); color: #F87171;">
+                                🗺️</div>
+                            <div class="tech-card-info">
+                                <span class="tech-card-title">Maps API: Goong Distance Matrix</span>
+                                <span class="tech-card-desc">Tự động tính khoảng cách đường đi thực tế từ GPS đến rạp
+                                    chiếu.</span>
+                            </div>
+                        </div>
+                        <div class="tech-card security">
+                            <div class="tech-card-icon" style="background: rgba(192, 132, 252, 0.1); color: #C084FC;">⚡
+                            </div>
+                            <div class="tech-card-info">
+                                <span class="tech-card-title">Optimization: Database RPCs</span>
+                                <span class="tech-card-desc">Đóng gói nghiệp vụ và xử lý Transaction đặt vé trực
+                                    tiếp.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Performance Chart -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <div class="chart-container"
+                            style="width: 100%; height: 200px; background: rgba(22, 22, 42, 0.5); padding: 12px; border-radius: 16px; border: 1px solid var(--color-border);">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 13px; color: var(--color-text-muted); text-align: center; line-height: 1.4;">
+                            * Minh chứng hiệu năng: Thuật toán Haversine offline (1ms) và Database RPC (45ms) giúp tối
+                            ưu hóa tốc độ phản hồi vượt trội so với gọi API mạng liên tục.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: VAI TRÒ & PHÂN QUYỀN TRONG HỆ THỐNG -->
+        <div class="slide">
+            <div class="slide-content">
+                <div>
+                    <h2 class="slide-title">Vai trò & Phân quyền trong hệ thống</h2>
+                    <p class="slide-subtitle">Phân bổ đặc quyền tương ứng với hai nhóm đối tượng chính (Đăng nhập bắt
+                        buộc)</p>
+                </div>
+
+                <div class="grid-2 animate-scale" style="gap: 30px; margin-top: 5px;">
+                    <!-- Role 1 -->
+                    <div class="card" style="padding: 20px;">
+                        <div class="card-accent-bar" style="background: var(--color-primary);"></div>
+                        <div style="font-size: 28px; margin-bottom: 8px;">🛡️</div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 8px; color: var(--color-primary);">Thành viên (Khách
+                            hàng)</h4>
+                        <ul
+                            style="padding-left: 20px; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px; text-align: left;">
+                            <li>Đăng nhập/Đăng ký tài khoản (Bắt buộc để truy cập ứng dụng).</li>
+                            <li>Tra cứu danh sách phim Đang chiếu / Sắp chiếu, xem trailer và thông tin chi tiết.</li>
+                            <li>Định vị vị trí hiện tại và tính toán khoảng cách thực tế đến các rạp (Goong API).</li>
+                            <li>Thực hiện luồng đặt vé: Chọn suất chiếu động, chọn combo bắp nước, áp mã giảm giá.</li>
+                            <li>Thanh toán qua cổng giả lập SeaPay và kiểm tra lịch sử/hiển thị vé cá nhân.</li>
+                        </ul>
+                    </div>
+                    <!-- Role 2 -->
+                    <div class="card" style="padding: 20px;">
+                        <div class="card-accent-bar" style="background: var(--color-success);"></div>
+                        <div style="font-size: 28px; margin-bottom: 8px;">⚙️</div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 8px; color: var(--color-success);">Quản trị viên
+                            (Admin)</h4>
+                        <ul
+                            style="padding-left: 20px; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px; text-align: left;">
+                            <li>Đăng nhập tài khoản Quản trị, truy cập bảng điều khiển Admin Dashboard.</li>
+                            <li>Giám sát biểu đồ doanh thu, số vé đã bán và lượng phim hoạt động realtime.</li>
+                            <li>Quản lý danh mục phim (Thêm/Sửa mô tả, chuyển đổi trạng thái hiển thị của phim).</li>
+                            <li>Kích hoạt Database RPC tự động tính toán và sinh lịch chiếu nhanh cho các phòng trống.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: BỐN ĐỘT PHÁ KỸ THUẬT & UI/UX CỐT LÕI -->
+        <div class="slide">
+            <div class="slide-content">
+                <div>
+                    <h2 class="slide-title">Bốn đột phá kỹ thuật & UI/UX cốt lõi</h2>
+                    <p class="slide-subtitle">Những điểm nhấn kỹ thuật mang lại giá trị cao cho sản phẩm</p>
+                </div>
+
+                <div class="grid-2 animate-fade-up" style="gap: 24px; max-width: 1000px;">
+                    <!-- Point 1 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="card-accent-bar" style="background: var(--color-primary);"></div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 10px; color: var(--color-primary);">1. Database
+                            Transaction</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Luồng tạo đơn vé, thanh toán và chốt ghế được xử
+                            lý tập trung trong một Transaction duy nhất ở mức cơ sở dữ liệu (RPC), loại bỏ hoàn toàn lỗi
+                            lệch dữ liệu hoặc tình trạng đặt trùng ghế (Race Condition).</p>
+                    </div>
+                    <!-- Point 2 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="card-accent-bar" style="background: var(--color-success);"></div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 10px; color: var(--color-success);">2. Inclusive
+                            Design</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Sơ đồ phòng chiếu sử dụng InteractiveViewer giúp
+                            thu phóng, vuốt đa hướng mượt mà. Tích hợp các ký hiệu hình học riêng bên cạnh màu sắc để hỗ
+                            trợ người mù màu chọn ghế chính xác, kết hợp hiệu ứng nảy nhẹ sinh động khi bấm.</p>
+                    </div>
+                    <!-- Point 3 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="card-accent-bar" style="background: var(--color-secondary);"></div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 10px; color: var(--color-secondary);">3. Skeuomorphic
+                            Ticket UI</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Thiết kế vé mô phỏng vật lý với đường cắt răng cưa
+                            (CustomPainter). Tự động đẩy độ sáng màn hình lên <strong>100%</strong> khi mở vé để máy
+                            quét tại rạp nhận diện mã QR Code tốt nhất, tự hồi phục độ sáng ban đầu khi đóng vé.</p>
+                    </div>
+                    <!-- Point 4 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="card-accent-bar" style="background: var(--color-warning);"></div>
+                        <h4 class="card-title"
+                            style="font-size: 20px; margin-bottom: 10px; color: var(--color-warning);">4. Performance
+                            Caching</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Áp dụng thư viện CachedNetworkImage và hiệu ứng
+                            quét sáng chuyển động Shimmer Box khi tải dữ liệu, giúp ứng dụng cuộn mượt mà, không lag
+                            hình ảnh và tiết kiệm tối đa băng thông.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: TIẾN TRÌNH LIVE DEMO ỨNG DỤNG -->
+        <div class="slide">
+            <div class="slide-content" style="justify-content: center; gap: 20px;">
+                <div>
+                    <h2 class="slide-title" style="font-size: 40px;">Tiến trình Live Demo ứng dụng</h2>
+                    <p class="slide-subtitle" style="margin-bottom: 0;">Trình tự các bước thực tế để chứng minh tính
+                        năng của sản phẩm</p>
+                </div>
+
+                <div class="grid-2" style="gap: 24px; width: 100%; max-width: 1000px; margin-top: 10px;">
+                    <!-- Step 1 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="badge" style="font-size: 13px; padding: 4px 10px;">BƯỚC 1</div>
+                        <h4 class="card-title" style="font-size: 20px; margin-bottom: 8px;">Đăng ký & Đăng nhập</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Đăng ký/Đăng nhập an toàn vào ứng dụng, khởi tạo
+                            cấu hình tài khoản thành viên để bắt đầu luồng sử dụng.</p>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="badge"
+                            style="background: rgba(139, 92, 246, 0.15); color: var(--color-secondary); font-size: 13px; padding: 4px 10px;">
+                            BƯỚC 2</div>
+                        <h4 class="card-title" style="font-size: 20px; margin-bottom: 8px;">Chọn phim & Định vị rạp</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Duyệt danh sách phim Đang chiếu/Sắp chiếu, tự động
+                            lấy tọa độ GPS định vị rạp gần nhất bằng Goong API.</p>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="badge"
+                            style="background: rgba(16, 185, 129, 0.15); color: var(--color-success); font-size: 13px; padding: 4px 10px;">
+                            BƯỚC 3</div>
+                        <h4 class="card-title" style="font-size: 20px; margin-bottom: 8px;">Thanh toán & Vé số hóa</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Thực hiện thanh toán giả lập qua cổng SeaPay, kiểm
+                            tra chiếc vé vật lý tích hợp tương tác đẩy max độ sáng màn hình hiển thị mã QR.</p>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="card" style="padding: 20px 24px;">
+                        <div class="badge"
+                            style="background: rgba(239, 68, 68, 0.15); color: var(--color-danger); font-size: 13px; padding: 4px 10px;">
+                            BƯỚC 4</div>
+                        <h4 class="card-title" style="font-size: 20px; margin-bottom: 8px;">Bảng điều khiển Admin</h4>
+                        <p style="font-size: 15px; line-height: 1.6;">Đăng nhập tài khoản Admin, theo dõi số liệu doanh
+                            thu cập nhật theo thời gian thực và vận hành công cụ sinh lịch chiếu tự động.</p>
+                    </div>
+                </div>
+
+                <div
+                    style="font-family: var(--font-mono); font-size: 14px; color: var(--color-primary); font-weight: bold; margin-top: 10px;">
+                    👉 Đầy đủ APK Android và Dữ liệu mẫu PostgreSQL (Supabase) đã sẵn sàng!
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: LIVE DEMO CHÍNH THỨC -->
+        <div class="slide">
+            <div class="slide-content" style="justify-content: center; gap: 24px;">
+                <div>
+                    <h2 class="slide-title" style="font-size: clamp(32px, 4.5vw, 54px);">Trình diễn Live Demo trực tiếp</h2>
+                    <p class="slide-subtitle" style="margin-bottom: 0;">Sẵn sàng chạy thử nghiệm ứng dụng trên môi trường thực tế</p>
+                </div>
+
+                <div class="grid-2-split animate-scale" style="gap: 40px; align-items: center; max-width: 1000px; width: 100%;">
+                    <!-- Left: Demo Environment Info -->
+                    <div style="text-align: left; display: flex; flex-direction: column; gap: 16px;">
+                        <h4 style="font-size: 20px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">⚙️ Môi trường thiết lập</h4>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; padding-left: 0; margin: 0;">
+                            <li style="font-size: 15px; line-height: 1.6;">📱 <strong>Thiết bị:</strong> Chạy trực tiếp trên Android Emulator (Pixel 6 Pro) / Điện thoại Android thật.</li>
+                            <li style="font-size: 15px; line-height: 1.6;">📡 <strong>Database & Auth:</strong> Xác thực qua Supabase Auth và quản lý dữ liệu PostgreSQL Realtime.</li>
+                            <li style="font-size: 15px; line-height: 1.6;">📍 <strong>GPS & Map:</strong> Goong API định vị thực tế rạp phim và khoảng cách Km.</li>
+                            <li style="font-size: 15px; line-height: 1.6;">💳 <strong>SeaPay Mock:</strong> Giao dịch thanh toán giả lập đồng bộ hóa cơ sở dữ liệu.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Right: Big Interactive Button and Q&A Welcome -->
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+                        <div class="card" style="padding: 30px; text-align: center; border-color: var(--color-primary); box-shadow: 0 10px 30px -10px rgba(192, 132, 252, 0.3); width: 100%; max-width: 400px; background: rgba(30, 27, 75, 0.3);">
+                            <div class="card-accent-bar" style="background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));"></div>
+                            <div style="font-size: 48px; margin-bottom: 12px; animation: bounce 2s infinite; display: inline-block;">🎬</div>
+                            <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #FFFFFF;">Bắt đầu Trình diễn</h3>
+                            <p style="font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); margin-bottom: 20px;">
+                                Kính mời Thầy/Cô và các bạn theo dõi luồng ứng dụng trực tiếp trên màn hình thiết bị di động.
+                            </p>
+                            <div style="font-family: var(--font-mono); font-size: 13px; color: var(--color-primary); font-weight: bold; background: rgba(192, 132, 252, 0.1); padding: 8px 12px; border-radius: 8px;">
+                                APK Sẵn Sàng • Supabase Realtime
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.slide-deck -->
+
+    <!-- Navigation Bar controls -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">←</button>
+        <span class="slide-counter"><span id="current">1</span> / <span id="total">5</span></span>
+        <button class="nav-btn" onclick="nextSlide()">→</button>
+    </div>
+
+    <!-- Navigation & Chart Logic -->
+    <script>
+        let current = 1;
+        const total = document.querySelectorAll('.slide').length;
+        document.getElementById('total').textContent = total;
+
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > total) n = total;
+            current = n;
+            document.querySelectorAll('.slide').forEach((s, i) => {
+                s.classList.toggle('active', i === n - 1);
+            });
+            document.getElementById('current').textContent = n;
+            document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+        }
+
+        function nextSlide() { showSlide(current + 1); }
+        function prevSlide() { showSlide(current - 1); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.nav-controls') && !e.target.closest('canvas')) nextSlide();
+        });
+
+        showSlide(1);
+
+        // Chart.js Performance configuration
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Goong API (Mạng)', 'Goong (Cache)', 'Haversine (Offline)', 'RPC Đặt vé (Supabase)', 'Query lồng (Kiểu cũ)'],
+                datasets: [{
+                    label: 'Thời gian phản hồi (ms)',
+                    data: [320, 5, 1, 45, 190],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',   // Goong API (Red)
+                        'rgba(16, 185, 129, 0.7)',  // Cache (Green)
+                        'rgba(139, 92, 246, 0.7)',  // Haversine (Violet)
+                        'rgba(59, 130, 246, 0.7)',   // Supabase RPC (Blue)
+                        'rgba(245, 158, 11, 0.7)'   // Nested Query (Orange)
+                    ],
+                    borderColor: [
+                        '#EF4444',
+                        '#10B981',
+                        '#8B5CF6',
+                        '#3B82F6',
+                        '#F59E0B'
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                        ticks: { color: '#B3B3CC', font: { family: 'Outfit', size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                        ticks: { color: '#B3B3CC', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
