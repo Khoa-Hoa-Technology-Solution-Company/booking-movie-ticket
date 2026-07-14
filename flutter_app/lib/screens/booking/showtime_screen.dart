@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/showtime.dart';
 import '../../services/movie_service.dart';
 import 'seat_selection_screen.dart';
+import '../../widgets/booking_components.dart';
 
 class ShowtimeScreen extends StatefulWidget {
   final int? movieId;
@@ -43,8 +44,6 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
@@ -67,67 +66,16 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
                       itemCount: _showtimes.length,
                       itemBuilder: (context, index) {
                         final showtime = _showtimes[index];
-                        final movie = showtime.movie;
-                        final room = showtime.room;
-                        final cinema = showtime.cinema;
-                        final price = showtime.price;
-                        final startTime = showtime.startTime;
-
-                        final timeStr = DateFormat('HH:mm').format(startTime);
-                        final dateStr = DateFormat('dd/MM/yyyy').format(startTime);
-                        final movieTitle = movie?.title ?? 'Phim';
-                        final posterUrl = movie?.posterUrl;
-
-                        return Card(
-                          color: const Color(0xFF16162A),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-                            child: ListTile(
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  width: 50,
-                                  height: 70,
-                                  color: Colors.white12,
-                                  child: posterUrl != null
-                                      ? Image.network(posterUrl, fit: BoxFit.cover)
-                                      : const Icon(Icons.movie, color: Colors.white30),
-                                ),
+                        return ShowtimeListTile(
+                          showtime: showtime,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SeatSelectionScreen(showtimeId: showtime.id),
                               ),
-                              title: Text(
-                                movieTitle,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 6.0),
-                                child: Text(
-                                  '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'} (${room?.roomType ?? '2D'})\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                                ),
-                              ),
-                              trailing: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SeatSelectionScreen(showtimeId: showtime.id),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFC084FC),
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: Text(
-                                  timeStr,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
                     ),

@@ -9,6 +9,7 @@ import '../booking/seat_selection_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/location_service.dart';
 import '../../models/cinema.dart';
+import '../../widgets/booking_components.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final int movieId;
@@ -28,9 +29,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   DateTime? _selectedDate;
 
   // Định vị rạp chiếu phim gần đây
-  Position? _userPosition;
   Map<int, CinemaDistanceResult> _cinemaDistances = {};
-  bool _isLocating = false;
 
   @override
   void initState() {
@@ -83,10 +82,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
     if (cinemas.isEmpty) return;
 
-    if (mounted) setState(() => _isLocating = true);
     try {
       final pos = await LocationService.instance.getCurrentPosition();
-      if (pos != null && mounted) {
+      if (mounted) {
         final distances = await LocationService.instance.calculateDistances(
           userLat: pos.latitude,
           userLng: pos.longitude,
@@ -94,15 +92,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         );
         if (mounted) {
           setState(() {
-            _userPosition = pos;
             _cinemaDistances = distances;
           });
         }
       }
     } catch (e) {
       debugPrint('Lỗi tải vị trí rạp chi tiết: $e');
-    } finally {
-      if (mounted) setState(() => _isLocating = false);
     }
   }
 
@@ -588,121 +583,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       );
     }
 
-    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-
     return Column(
       children: grouped.entries.map((entry) {
         final cinema = entry.key;
         final showtimes = entry.value;
         final distanceResult = _cinemaDistances[cinema.id];
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Cinema header with distance info
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(cinema.name, style: AppTextStyles.bodyBold),
-                        const SizedBox(height: 2),
-                        Text(cinema.address, style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ),
-                  if (distanceResult != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryDim,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 10),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${distanceResult.distanceText} • ${distanceResult.durationText}',
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Showtime hour chips under this cinema
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: showtimes.map((st) {
-                  final timeStr = DateFormat('HH:mm').format(st.startTime);
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => SeatSelectionScreen(showtimeId: st.id)),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            timeStr,
-                            style: GoogleFonts.robotoMono(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            st.room?.roomType ?? '2D',
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            formatter.format(st.price),
-                            style: GoogleFonts.outfit(
-                              fontSize: 10,
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+        return CinemaShowtimeCard(
+          cinema: cinema,
+          showtimes: showtimes,
+          distanceResult: distanceResult,
+          onShowtimeTap: (st) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => SeatSelectionScreen(showtimeId: st.id)),
+            );
+          },
         );
       }).toList(),
     );

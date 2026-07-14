@@ -9,6 +9,7 @@ import 'movie_detail_screen.dart';
 import 'movie_list_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/location_service.dart';
+import '../../widgets/booking_components.dart';
 
 class HomeMovieScreen extends StatefulWidget {
   const HomeMovieScreen({super.key});
@@ -104,7 +105,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
     if (mounted) setState(() => _isLocating = true);
     try {
       final pos = await LocationService.instance.getCurrentPosition();
-      if (pos != null && mounted) {
+      if (mounted) {
         final distances = await LocationService.instance.calculateDistances(
           userLat: pos.latitude,
           userLng: pos.longitude,
@@ -374,9 +375,12 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
       itemCount: _cinemas.length,
       itemBuilder: (context, i) {
         final cinema = _cinemas[i];
-        return _CinemaListTile(
+        return CinemaListTile(
           cinema: cinema,
           distanceResult: _cinemaDistances[cinema.id],
+          onTap: () {
+            // Có thể mở chi tiết hoặc liên kết đến đặt vé rạp này
+          },
         );
       },
     );
@@ -460,79 +464,7 @@ class _MoviePosterCard extends StatelessWidget {
   }
 }
 
-// === CINEMA LIST TILE ===
-class _CinemaListTile extends StatelessWidget {
-  final Cinema cinema;
-  final CinemaDistanceResult? distanceResult;
-  
-  const _CinemaListTile({
-    required this.cinema,
-    this.distanceResult,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.surface,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            // Icon rạp
-            Container(
-              width: 42, height: 42,
-              decoration: BoxDecoration(
-                color: AppColors.primaryDim,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.movie_creation_outlined, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: 12),
-            // Thông tin rạp
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(cinema.name, style: AppTextStyles.bodyBold, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 3),
-                  Text(cinema.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.caption),
-                  if (distanceResult != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 11),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Badge thành phố
-            AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _CinemaListTile has been refactored and moved to booking_components.dart
 
 class _PosterFallback extends StatelessWidget {
   const _PosterFallback();

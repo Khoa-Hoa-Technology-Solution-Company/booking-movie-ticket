@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/showtime.dart';
+import '../../models/cinema.dart';
+import '../../services/location_service.dart';
+import '../core/theme/app_theme.dart';
 
 /// A premium, interactive seat widget that renders itself according to 
 /// its type (Standard, VIP, Couple) and state (Selected, Booked, Held, Maintenance, Available).
@@ -313,6 +317,288 @@ class FoodCard extends StatelessWidget {
               onDecrement: onDecrement,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A premium, overflow-safe cinema card that displays cinema name, address,
+/// optional distance result, and trailing city badge.
+class CinemaListTile extends StatelessWidget {
+  final Cinema cinema;
+  final CinemaDistanceResult? distanceResult;
+  final VoidCallback? onTap;
+
+  const CinemaListTile({
+    super.key,
+    required this.cinema,
+    this.distanceResult,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppColors.surface,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              // Icon rạp
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDim,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.movie_creation_outlined, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              // Thông tin rạp
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(cinema.name, style: AppTextStyles.bodyBold, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 3),
+                    Text(cinema.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.caption),
+                    if (distanceResult != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 11),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Badge thành phố
+              AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A grouped card representing a cinema and its corresponding showtime slots/hour chips.
+class CinemaShowtimeCard extends StatelessWidget {
+  final Cinema cinema;
+  final List<Showtime> showtimes;
+  final CinemaDistanceResult? distanceResult;
+  final ValueChanged<Showtime> onShowtimeTap;
+
+  const CinemaShowtimeCard({
+    super.key,
+    required this.cinema,
+    required this.showtimes,
+    this.distanceResult,
+    required this.onShowtimeTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cinema header with distance info
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(cinema.name, style: AppTextStyles.bodyBold),
+                    const SizedBox(height: 2),
+                    Text(cinema.address, style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              if (distanceResult != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDim,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 10),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                AppBadge(label: cinema.city, color: Colors.white10, textColor: AppColors.textSecondary),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Showtime hour chips under this cinema
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: showtimes.map((st) {
+              final timeStr = DateFormat('HH:mm').format(st.startTime);
+              return GestureDetector(
+                onTap: () => onShowtimeTap(st),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        timeStr,
+                        style: GoogleFonts.robotoMono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        st.room?.roomType ?? '2D',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formatter.format(st.price),
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A premium, customizable list tile displaying flat showtime information.
+class ShowtimeListTile extends StatelessWidget {
+  final Showtime showtime;
+  final VoidCallback onTap;
+
+  const ShowtimeListTile({
+    super.key,
+    required this.showtime,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final movie = showtime.movie;
+    final room = showtime.room;
+    final cinema = showtime.cinema;
+    final price = showtime.price;
+    final startTime = showtime.startTime;
+
+    final timeStr = DateFormat('HH:mm').format(startTime);
+    final dateStr = DateFormat('dd/MM/yyyy').format(startTime);
+    final movieTitle = movie?.title ?? 'Phim';
+    final posterUrl = movie?.posterUrl;
+
+    return Card(
+      color: AppColors.surface,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+        child: ListTile(
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 50,
+              height: 70,
+              color: Colors.white12,
+              child: posterUrl != null && posterUrl.isNotEmpty
+                  ? Image.network(posterUrl, fit: BoxFit.cover)
+                  : const Icon(Icons.movie, color: Colors.white30),
+            ),
+          ),
+          title: Text(
+            movieTitle,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6.0),
+            child: Text(
+              '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'} (${room?.roomType ?? '2D'})\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+          ),
+          trailing: ElevatedButton(
+            onPressed: onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              timeStr,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
       ),
     );
