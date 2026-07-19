@@ -5,23 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f247f5cf-4141-46d8-b6dc-b487d1371ec3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/config/app_config.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/config/app_config.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/models/cinema.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/models/cinema.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/admin/admin_dashboard_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/admin/admin_dashboard_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/movies/home_movie_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/movies/home_movie_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/screens/movies/movie_detail_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/screens/movies/movie_detail_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/admin_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/admin_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/lib/services/booking_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/lib/services/booking_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_app/windows/flutter/generated_plugins.cmake" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -52,7 +52,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: BottomNavigationBar(
@@ -2349,7 +2349,7 @@ class _RoomSelectorBottomSheetState extends State<_RoomSelectorBottomSheet> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                   : _rooms.isEmpty
-                      ? const Center(child: Text('Không có phòng chiếu nào', style: TextStyle(color: AppColors.textMuted)))
+                      ? Center(child: Text('Không có phòng chiếu nào', style: TextStyle(color: AppColors.textMuted)))
                       : ListView.builder(
                           itemCount: _rooms.length,
                           itemBuilder: (context, index) {
@@ -2365,7 +2365,7 @@ class _RoomSelectorBottomSheetState extends State<_RoomSelectorBottomSheet> {
                               margin: const EdgeInsets.only(bottom: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                side: const BorderSide(color: AppColors.border),
+                                side: BorderSide(color: AppColors.border),
                               ),
                               child: ListTile(
                                 leading: Container(
@@ -2522,7 +2522,7 @@ class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> 
           // Header
           Text('${widget.cinemaName} - ${widget.roomName}', style: AppTextStyles.titleMedium, textAlign: TextAlign.center),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Chạm vào ô để thay đổi: Trống → Thường → VIP → Ghế Đôi',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textMuted, fontSize: 11),
@@ -2645,7 +2645,7 @@ class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> 
                     onPressed: _isSaving ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textMuted,
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: AppColors.border),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -2689,7 +2689,7 @@ class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> 
   }) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -2722,14 +2722,14 @@ class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> 
   Widget _buildEditorLegend() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
+      children: [
         _EditorLegendItem(color: AppColors.border, label: 'Trống'),
-        SizedBox(width: 12),
-        _EditorLegendItem(color: Color(0xFFB0B0C8), label: 'Thường (S)'),
-        SizedBox(width: 12),
-        _EditorLegendItem(color: Color(0xFFF97316), label: 'VIP (V)'),
-        SizedBox(width: 12),
-        _EditorLegendItem(color: Color(0xFFEF4444), label: 'Đôi (C)'),
+        const SizedBox(width: 12),
+        const _EditorLegendItem(color: Color(0xFFB0B0C8), label: 'Thường (S)'),
+        const SizedBox(width: 12),
+        const _EditorLegendItem(color: Color(0xFFF97316), label: 'VIP (V)'),
+        const SizedBox(width: 12),
+        const _EditorLegendItem(color: Color(0xFFEF4444), label: 'Đôi (C)'),
       ],
     );
   }
@@ -2747,7 +2747,7 @@ class _EditorLegendItem extends StatelessWidget {
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color.withOpacity(0.15), border: Border.all(color: color), borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
       ],
     );
   }

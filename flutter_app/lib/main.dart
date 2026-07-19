@@ -30,12 +30,18 @@ class MovieApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Movie Ticket Booking',
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      darkTheme: AppTheme.dark,
-      home: initialScreen,
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Movie Ticket Booking',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeNotifier.mode,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          home: initialScreen,
+        );
+      },
     );
   }
 }

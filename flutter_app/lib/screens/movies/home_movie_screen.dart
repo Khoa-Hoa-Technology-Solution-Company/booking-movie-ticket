@@ -10,6 +10,7 @@ import 'movie_list_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../services/location_service.dart';
 import '../../widgets/booking_components.dart';
+import '../booking/cinema_detail_screen.dart';
 
 class HomeMovieScreen extends StatefulWidget {
   const HomeMovieScreen({super.key});
@@ -135,6 +136,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -160,14 +162,14 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
             onPressed: () {},
             tooltip: 'Tìm kiếm',
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary),
+              icon: Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary),
               onPressed: () {},
               tooltip: 'Thông báo',
             ),
@@ -323,9 +325,9 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
   // === MOVIE CARD ROW ===
   Widget _buildMovieCardRow() {
     if (_nowShowing.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text('Không có phim nào đang chiếu', style: TextStyle(color: AppColors.textMuted)),
         ),
       );
@@ -379,7 +381,15 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
           cinema: cinema,
           distanceResult: _cinemaDistances[cinema.id],
           onTap: () {
-            // Có thể mở chi tiết hoặc liên kết đến đặt vé rạp này
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CinemaDetailScreen(
+                  cinema: cinema,
+                  distanceResult: _cinemaDistances[cinema.id],
+                ),
+              ),
+            );
           },
         );
       },
@@ -452,7 +462,7 @@ class _MoviePosterCard extends StatelessWidget {
                 const SizedBox(width: 3),
                 Text('${movie.rating}', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(width: 8),
-                const Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 12),
+                Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 12),
                 const SizedBox(width: 3),
                 Text('${movie.duration}p', style: AppTextStyles.caption),
               ],
@@ -477,7 +487,7 @@ class _PosterFallback extends StatelessWidget {
           colors: [Color(0xFF1E1B4B), Colors.black],
         ),
       ),
-      child: const Center(child: Icon(Icons.movie_rounded, size: 48, color: AppColors.textMuted)),
+      child: Center(child: Icon(Icons.movie_rounded, size: 48, color: AppColors.textMuted)),
     );
   }
 }

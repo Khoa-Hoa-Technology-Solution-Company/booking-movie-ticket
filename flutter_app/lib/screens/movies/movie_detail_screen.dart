@@ -192,14 +192,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
     if (_movie == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
         body: Center(child: Text('Không tìm thấy thông tin phim', style: TextStyle(color: AppColors.textMuted))),
       );
@@ -306,13 +307,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       colors: [Color(0xFF1E1B4B), Colors.black],
                     ),
                   ),
-                  child: const Center(child: Icon(Icons.movie_rounded, size: 80, color: AppColors.textMuted)),
+                  child: Center(child: Icon(Icons.movie_rounded, size: 80, color: AppColors.textMuted)),
                 ),
               )
             else
               Container(color: AppColors.surfaceHigh),
             // Gradient scrim
-            const DecoratedBox(decoration: BoxDecoration(gradient: AppColors.posterScrim)),
+            DecoratedBox(decoration: BoxDecoration(gradient: AppColors.posterScrim)),
             // Rating bottom-left
             Positioned(
               bottom: 16, left: AppSpacing.lg,
@@ -322,7 +323,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   const SizedBox(width: 4),
                   Text('${_movie!.rating}', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(width: 16),
-                  const Icon(Icons.access_time_rounded, color: AppColors.textSecondary, size: 16),
+                  Icon(Icons.access_time_rounded, color: AppColors.textSecondary, size: 16),
                   const SizedBox(width: 4),
                   Text('${_movie!.duration} phút', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 14)),
                 ],
@@ -344,7 +345,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         const SizedBox(width: 12),
         AppBadge(label: _movie!.ageRating ?? 'P'),
         const SizedBox(width: 12),
-        const Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 14),
+        Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 14),
         const SizedBox(width: 4),
         Text('${_movie!.duration} phút', style: AppTextStyles.body),
       ],
@@ -391,7 +392,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Suất chiếu sẽ được mở bán khi phim chính thức công chiếu.',
               style: TextStyle(color: AppColors.textMuted, fontSize: 12),
               textAlign: TextAlign.center,
@@ -406,7 +407,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       alignment: Alignment.center,
       child: Column(
         children: [
-          const Icon(Icons.event_busy_rounded, size: 48, color: AppColors.textMuted),
+          Icon(Icons.event_busy_rounded, size: 48, color: AppColors.textMuted),
           const SizedBox(height: 12),
           Text('Không có lịch chiếu khả dụng', style: AppTextStyles.body),
         ],
@@ -544,7 +545,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         style: GoogleFonts.robotoMono(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : Colors.white,
+                          color: isSelected ? Colors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -575,7 +576,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         alignment: Alignment.center,
         child: Column(
           children: [
-            const Icon(Icons.event_busy_rounded, size: 40, color: AppColors.textMuted),
+            Icon(Icons.event_busy_rounded, size: 40, color: AppColors.textMuted),
             const SizedBox(height: 12),
             Text('Không có suất chiếu vào ngày này', style: AppTextStyles.body),
           ],

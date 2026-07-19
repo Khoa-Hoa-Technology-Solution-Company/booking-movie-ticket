@@ -380,9 +380,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     if (_isLoading || _showtimeDetail == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -525,7 +525,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
           // === BOTTOM BAR ===
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.border)),
             ),
@@ -552,7 +552,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_offer_outlined, color: AppColors.textMuted, size: 16),
+                            prefixIcon: Icon(Icons.local_offer_outlined, color: AppColors.textMuted, size: 16),
                           ),
                         ),
                       ),
@@ -600,7 +600,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                           children: [
                             if (_discountAmount > 0) ...[
                               Text(formatter.format(subtotal),
-                                style: const TextStyle(color: AppColors.textMuted, fontSize: 11,
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 11,
                                   decoration: TextDecoration.lineThrough)),
                               Text('- ${formatter.format(_discountAmount)}',
                                 style: const TextStyle(color: AppColors.success, fontSize: 11)),
@@ -660,7 +660,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
+          border: Border.fromBorderSide(BorderSide(color: AppColors.border)),
         ),
         child: Wrap(
           alignment: WrapAlignment.center,

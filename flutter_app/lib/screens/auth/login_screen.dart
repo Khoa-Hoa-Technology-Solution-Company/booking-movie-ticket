@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
                           hintText: 'Nhập email của bạn',
@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           labelText: 'Mật khẩu',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary),
+                          prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary),
                           suffixIcon: GestureDetector(
                             onTap: () => setState(() => _obscurePassword = !_obscurePassword),
                             child: Padding(
@@ -201,12 +201,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       // Divider
                       Row(
                         children: [
-                          const Expanded(child: Divider(color: AppColors.border)),
+                          Expanded(child: Divider(color: AppColors.border)),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text('hoặc', style: AppTextStyles.caption),
                           ),
-                          const Expanded(child: Divider(color: AppColors.border)),
+                          Expanded(child: Divider(color: AppColors.border)),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -216,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         onPressed: _isLoading ? null : _handleGoogleLogin,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
-                          side: const BorderSide(color: AppColors.border, width: 1.5),
+                          side: BorderSide(color: AppColors.border, width: 1.5),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),

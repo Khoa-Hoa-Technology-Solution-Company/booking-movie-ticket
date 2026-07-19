@@ -54,12 +54,13 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Lắng nghe để cập nhật toàn bộ shell & BottomNavBar khi đổi theme
     final List<Widget> screens = [
-      const HomeMovieScreen(),
-      const MovieListScreen(),
+      HomeMovieScreen(),
+      MovieListScreen(),
       BookingHistoryScreen(currentTabIndex: _currentIndex),
-      const SecurityDashboardScreen(),
-      const ProfileScreen(),
+      SecurityDashboardScreen(),
+      ProfileScreen(),
     ];
 
     return Scaffold(
@@ -95,7 +96,7 @@ class _AnimatedBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),

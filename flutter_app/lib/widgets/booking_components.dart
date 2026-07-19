@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/showtime.dart';
 import '../../models/cinema.dart';
 import '../../services/location_service.dart';
@@ -147,8 +148,8 @@ class QuantitySelector extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               '$quantity',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -216,7 +217,7 @@ class FoodCard extends StatelessWidget {
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Card(
-      color: const Color(0xFF16162A), // Dark surface color
+      color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -275,8 +276,8 @@ class FoodCard extends StatelessWidget {
                     name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -287,8 +288,8 @@ class FoodCard extends StatelessWidget {
                       description!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white54,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -344,7 +345,7 @@ class CinemaListTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -451,26 +452,40 @@ class CinemaShowtimeCard extends StatelessWidget {
                 ),
               ),
               if (distanceResult != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDim,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 10),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                GestureDetector(
+                  onTap: (cinema.latitude != null && cinema.longitude != null)
+                      ? () async {
+                          final url = Uri.parse(
+                            'https://www.google.com/maps/dir/?api=1&destination=${cinema.latitude},${cinema.longitude}',
+                          );
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            await launchUrl(url, mode: LaunchMode.platformDefault);
+                          }
+                        }
+                      : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDim,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 10),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${distanceResult!.distanceText} • ${distanceResult!.durationText}',
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 )
               else
@@ -570,21 +585,21 @@ class ShowtimeListTile extends StatelessWidget {
             child: Container(
               width: 50,
               height: 70,
-              color: Colors.white12,
+              color: AppColors.border,
               child: posterUrl != null && posterUrl.isNotEmpty
                   ? Image.network(posterUrl, fit: BoxFit.cover)
-                  : const Icon(Icons.movie, color: Colors.white30),
+                  : Icon(Icons.movie, color: AppColors.textMuted),
             ),
           ),
           title: Text(
             movieTitle,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 6.0),
             child: Text(
               '${cinema?.name ?? 'Rạp'} • ${room?.name ?? 'Phòng'} (${room?.roomType ?? '2D'})\nNgày $dateStr • Giá vé: ${formatter.format(price)}',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ),
           trailing: ElevatedButton(

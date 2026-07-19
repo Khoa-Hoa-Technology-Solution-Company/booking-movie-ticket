@@ -56,11 +56,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.surfaceHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Đăng Xuất', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất?', style: TextStyle(color: AppColors.textSecondary)),
+        content: Text('Bạn có chắc chắn muốn đăng xuất?', style: TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
+            child: Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: TextFormField(
               controller: controller,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Họ và tên',
                 prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textMuted),
               ),
@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             TextButton(onPressed: isSaving ? null : () => Navigator.pop(context),
-              child: const Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
+              child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: isSaving ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -173,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             TextButton(onPressed: isSaving ? null : () => Navigator.pop(context),
-              child: const Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
+              child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
             ElevatedButton(
               onPressed: isSaving ? null : () async {
                 if (!formKey.currentState!.validate()) return;
@@ -213,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
+        prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
       ),
       validator: validator,
     );
@@ -274,6 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Section: Ứng dụng
                         _buildSectionLabel('Ứng Dụng'),
                         const SizedBox(height: AppSpacing.sm),
+                        _buildThemeToggleItem(),
                         _buildMenuItem(
                           icon: Icons.notifications_none_rounded,
                           color: const Color(0xFF06B6D4),
@@ -479,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
+          border: Border.fromBorderSide(BorderSide(color: AppColors.border)),
         ),
         child: Row(
           children: [
@@ -501,7 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+            Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
           ],
         ),
       ),
@@ -528,6 +529,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildThemeToggleItem() {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) {
+        final isDark = themeNotifier.isDarkMode;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.fromBorderSide(BorderSide(color: AppColors.border)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: (isDark ? Colors.amber : Colors.indigo).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  color: isDark ? Colors.amber : Colors.indigo,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isDark ? 'Giao diện tối' : 'Giao diện sáng',
+                      style: AppTextStyles.bodyBold,
+                    ),
+                    Text(
+                      isDark ? 'Bấm để chuyển sang chế độ sáng' : 'Bấm để chuyển sang chế độ tối',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: !isDark,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  themeNotifier.toggleTheme();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

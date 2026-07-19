@@ -54,6 +54,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -104,7 +105,7 @@ class _MovieListScreenState extends State<MovieListScreen> with SingleTickerProv
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.movie_filter_outlined, size: 64, color: AppColors.textMuted),
+            Icon(Icons.movie_filter_outlined, size: 64, color: AppColors.textMuted),
             const SizedBox(height: 12),
             Text('Không có phim nào', style: AppTextStyles.body),
           ],
@@ -167,7 +168,7 @@ class _MovieGridCard extends StatelessWidget {
                               colors: [Color(0xFF1E1B4B), Colors.black],
                             ),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Icon(Icons.movie_rounded, size: 42, color: AppColors.textMuted),
                           ),
                         ),
@@ -213,7 +214,7 @@ class _MovieGridCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.access_time_rounded, size: 11, color: AppColors.textMuted),
+                        Icon(Icons.access_time_rounded, size: 11, color: AppColors.textMuted),
                         const SizedBox(width: 3),
                         Text('${movie.duration}p', style: AppTextStyles.caption),
                         if (isNowShowing) ...[

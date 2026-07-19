@@ -5,6 +5,7 @@ import '../../models/security.dart';
 import 'security_issues_screen.dart';
 import 'login_history_screen.dart';
 import 'security_alerts_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class SecurityDashboardScreen extends StatefulWidget {
   const SecurityDashboardScreen({super.key});
@@ -77,6 +78,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     final theme = Theme.of(context);
     final security = _dashboardData;
     final int securityScore = security?.securityScore ?? 50;
@@ -94,10 +96,10 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       : 'Chưa có dữ liệu';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Trung Tâm Bảo Mật', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
@@ -114,7 +116,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                   children: [
                     // Security Score Gauge
                     Card(
-                      color: const Color(0xFF16162A),
+                      color: AppColors.surface,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
@@ -129,7 +131,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                                   child: CircularProgressIndicator(
                                     value: securityScore / 100,
                                     strokeWidth: 12,
-                                    backgroundColor: Colors.white10,
+                                    backgroundColor: AppColors.border,
                                     color: scoreColor,
                                   ),
                                 ),
@@ -140,25 +142,25 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                                       '$securityScore%',
                                       style: theme.textTheme.headlineMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    const Text('An toàn', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                    Text('An toàn', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                                   ],
                                 ),
                               ],
                             ),
                             const SizedBox(height: 20),
-                            const Text(
+                            Text(
                               'Điểm Bảo Mật Tài Khoản',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               securityScore >= 75
                                   ? 'Tài khoản của bạn đang được bảo vệ rất tốt.'
                                   : 'Hãy khắc phục các sự cố bảo mật để bảo vệ tài khoản tốt hơn.',
-                              style: const TextStyle(color: Colors.white54, fontSize: 12),
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -169,20 +171,20 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
 
                     // Quick Toggle for 2FA/OTP
                     Card(
-                      color: const Color(0xFF16162A),
+                      color: AppColors.surface,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       child: SwitchListTile(
                         value: _twoFactorEnabled,
                         onChanged: _isLoading ? null : _handleToggle2FA,
-                        title: const Text(
+                        title: Text(
                           'Xác thực 2 bước (2FA)',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                        subtitle: const Text(
+                        subtitle: Text(
                           'Yêu cầu nhập mã OTP gửi qua Email mỗi khi đăng nhập',
-                          style: TextStyle(color: Colors.white54, fontSize: 11),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                         ),
-                        activeColor: const Color(0xFFC084FC),
+                        activeThumbColor: const Color(0xFFC084FC),
                         activeTrackColor: const Color(0xFFC084FC).withAlpha(76),
                       ),
                     ),
@@ -190,16 +192,16 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
 
                     // Kênh xác minh status
                     Card(
-                      color: const Color(0xFF16162A),
+                      color: AppColors.surface,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Các kênh liên lạc & Xác minh',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             const SizedBox(height: 12),
                             _buildChannelStatus(
@@ -209,7 +211,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                               hasChannel: security?.hasEmail == true,
                               icon: Icons.email,
                             ),
-                            const Divider(color: Colors.white12, height: 16),
+                            Divider(color: AppColors.border, height: 16),
                             _buildChannelStatus(
                               title: 'Số điện thoại',
                               value: 'Chưa liên kết',
@@ -224,7 +226,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                     const SizedBox(height: 24),
 
                     // Navigation Menu Options
-                    const Text('Báo cáo chi tiết', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('Báo cáo chi tiết', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     
                     _buildNavCard(
@@ -268,7 +270,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
                     Center(
                       child: Text(
                         'Đăng nhập cuối: $lastLoginStr',
-                        style: const TextStyle(color: Colors.white30, fontSize: 11),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -291,9 +293,9 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 18),
+            Icon(icon, color: AppColors.textSecondary, size: 18),
             const SizedBox(width: 8),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            Text(title, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
           ],
         ),
         Row(
@@ -332,7 +334,7 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
     required VoidCallback onTap,
   }) {
     return Card(
-      color: const Color(0xFF16162A),
+      color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
@@ -341,9 +343,9 @@ class _SecurityDashboardScreenState extends State<SecurityDashboardScreen> {
           backgroundColor: iconColor.withOpacity(0.1),
           child: Icon(icon, color: iconColor),
         ),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 16),
+        title: Text(title, style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+        trailing: Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 16),
         onTap: onTap,
       ),
     );

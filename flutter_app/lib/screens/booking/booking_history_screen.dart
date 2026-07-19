@@ -541,13 +541,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Vé Của Tôi', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
@@ -557,8 +558,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               onRefresh: _loadBookingHistory,
               color: const Color(0xFFC084FC),
               child: _bookings.isEmpty
-                  ? const Center(
-                      child: Text('Bạn chưa đặt vé nào', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                  ? Center(
+                      child: Text('Bạn chưa đặt vé nào', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -606,7 +607,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         }
 
                         return Card(
-                          color: const Color(0xFF16162A),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           child: Padding(
@@ -620,7 +621,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   children: [
                                     Text(
                                       'Mã đặt vé: #${booking.id}',
-                                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -638,14 +639,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 const SizedBox(height: 12),
 
                                 // Movie Title
-                                Text(
-                                  movieTitle,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
+                                  Text(
+                                    movieTitle,
+                                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
                                 const SizedBox(height: 8),
 
                                 // Cinema and Date
-                                Text('$cinemaName - $roomName (${room?.roomType ?? '2D'})', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                  Text('$cinemaName - $roomName (${room?.roomType ?? '2D'})', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                                 const SizedBox(height: 4),
                                  // Ngày chiếu: đỏ nếu đã qua, tím nếu còn hạn
                                  Text(
@@ -661,17 +662,17 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                  const SizedBox(height: 6),
                                  
                                  // Seat list
-                                 Text('Danh sách ghế: $seatNames', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                 Text('Danh sách ghế: $seatNames', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                                  if (booking.orderItems != null && booking.orderItems!.isNotEmpty) ...[
                                    const SizedBox(height: 6),
                                    Text(
                                      'Bắp nước: ${booking.orderItems!.map((item) => '${item.itemName} (x${item.quantity})').join(', ')}',
-                                     style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                     style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                                    ),
                                  ],
                                  const SizedBox(height: 12),
                                  
-                                 const Divider(color: Colors.white10),
+                                 Divider(color: AppColors.border),
                                  const SizedBox(height: 8),
                                  
                                  // Pricing and Action Buttons
@@ -681,8 +682,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                      Column(
                                        crossAxisAlignment: CrossAxisAlignment.start,
                                        children: [
-                                         const Text('Tổng tiền:', style: TextStyle(color: Colors.white38, fontSize: 11)),
-                                         Text(formatter.format(totalAmount), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                         Text('Tổng tiền:', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                                         Text(formatter.format(totalAmount), style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
                                        ],
                                      ),
                                      

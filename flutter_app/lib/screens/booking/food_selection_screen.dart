@@ -145,8 +145,8 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: const Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
@@ -164,10 +164,10 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 ListTile(
                   leading: const Icon(Icons.wallet, color: AppColors.primary),
                   title: Text('Ví Điện Tử Demo', style: AppTextStyles.bodyBold),
-                  subtitle: const Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  subtitle: Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -178,10 +178,10 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 ListTile(
                   leading: const Icon(Icons.account_balance, color: AppColors.primary),
                   title: Text('Chuyển Khoản Ngân Hàng (SePay)', style: AppTextStyles.bodyBold),
-                  subtitle: const Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  subtitle: Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -268,7 +268,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 children: [
                   Text('Thanh Toán SePay', style: AppTextStyles.titleMedium),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    icon: Icon(Icons.close, color: AppColors.textMuted),
                     onPressed: () {
                       bookingStream.cancel();
                       Navigator.pop(context);
@@ -280,7 +280,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Quét mã VietQR dưới đây để thanh toán chuyển khoản:', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text('Quét mã VietQR dưới đây để thanh toán chuyển khoản:', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     const SizedBox(height: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
@@ -295,7 +295,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                             width: 200,
                             height: 200,
                             color: Colors.white.withOpacity(0.05),
-                            child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                            child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                           );
                         },
                       ),
@@ -309,9 +309,9 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
-                        SizedBox(width: 10),
+                      children: [
+                        const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                        const SizedBox(width: 10),
                         Expanded(child: Text('Đang chờ hệ thống tự động xác nhận chuyển khoản...', style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
                       ],
                     ),
@@ -324,7 +324,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                     bookingStream.cancel();
                     Navigator.pop(context);
                   },
-                  child: const Text('Hủy / Đóng', style: TextStyle(color: AppColors.textMuted)),
+                  child: Text('Hủy / Đóng', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isChecking
@@ -377,7 +377,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+          Expanded(flex: 3, child: Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13))),
           Expanded(
             flex: 5,
             child: Row(
@@ -418,13 +418,13 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Bạn đang thanh toán đơn đặt vé số:', style: TextStyle(color: AppColors.textSecondary)),
+                  Text('Bạn đang thanh toán đơn đặt vé số:', style: TextStyle(color: AppColors.textSecondary)),
                   Text('#${booking.id}', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tổng tiền:', style: TextStyle(color: AppColors.textSecondary)),
+                      Text('Tổng tiền:', style: TextStyle(color: AppColors.textSecondary)),
                       Text(formatter.format(booking.totalAmount), style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 20)),
                     ],
                   ),
@@ -433,7 +433,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
               actions: [
                 TextButton(
                   onPressed: isPaying ? null : () => Navigator.pop(context),
-                  child: const Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
+                  child: Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isPaying
@@ -487,7 +487,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 const SizedBox(height: 12),
                 Text('Đặt Vé Thành Công!', style: AppTextStyles.titleMedium),
                 const SizedBox(height: 8),
-                const Text('Cảm ơn bạn đã mua vé. Vé của bạn đã được kích hoạt.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12), textAlign: TextAlign.center),
+                Text('Cảm ơn bạn đã mua vé. Vé của bạn đã được kích hoạt.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12), textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -507,12 +507,12 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 const SizedBox(height: 16),
                 Text('MÃ VÉ: $ticketCode', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.5)),
                 const SizedBox(height: 20),
-                const Divider(color: AppColors.border),
+                Divider(color: AppColors.border),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tổng thanh toán:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text('Tổng thanh toán:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     Text(formatter.format(booking.totalAmount), style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
@@ -549,9 +549,9 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
     final double totalAmount = _getTotalAmount();
 
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -648,7 +648,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.border)),
         ),
@@ -660,7 +660,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Vé xem phim:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                  Text('Vé xem phim:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   Text(formatter.format(_seatsSubtotal), style: const TextStyle(color: Colors.white, fontSize: 13)),
                 ],
               ),
@@ -669,7 +669,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Khuyến mãi vé:', style: TextStyle(color: AppColors.success, fontSize: 13)),
+                    Text('Khuyến mãi vé:', style: TextStyle(color: AppColors.success, fontSize: 13)),
                     Text('-${formatter.format(_discountAmount)}', style: const TextStyle(color: AppColors.success, fontSize: 13)),
                   ],
                 ),
@@ -679,13 +679,13 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Bắp nước:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text('Bắp nước:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     Text(formatter.format(foodSubtotal), style: const TextStyle(color: Colors.white, fontSize: 13)),
                   ],
                 ),
               ],
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Divider(color: AppColors.border, height: 1),
               ),
               Row(
@@ -694,7 +694,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Tổng thanh toán:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      Text('Tổng thanh toán:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(formatter.format(totalAmount), style: AppTextStyles.price),
                     ],

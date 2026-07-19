@@ -4,6 +4,7 @@ import '../../models/showtime.dart';
 import '../../services/movie_service.dart';
 import 'seat_selection_screen.dart';
 import '../../widgets/booking_components.dart';
+import '../../core/theme/app_theme.dart';
 
 class ShowtimeScreen extends StatefulWidget {
   final int? movieId;
@@ -44,11 +45,12 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Lắng nghe để cập nhật giao diện lập tức khi đổi theme
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Lịch Chiếu Toàn Hệ Thống', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
@@ -58,8 +60,8 @@ class _ShowtimeScreenState extends State<ShowtimeScreen> {
               onRefresh: _loadShowtimes,
               color: const Color(0xFFC084FC),
               child: _showtimes.isEmpty
-                  ? const Center(
-                      child: Text('Không có suất chiếu nào gần đây', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                  ? Center(
+                      child: Text('Không có suất chiếu nào gần đây', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
