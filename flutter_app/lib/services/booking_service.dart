@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/api/app_exception.dart';
 import '../core/utils/promotion_validator.dart';
 import '../models/booking.dart';
 import '../models/food.dart';
+import 'email_service.dart';
 
 abstract class IBookingService {
   /// Đặt vé (Gọi transaction RPC của Supabase)
@@ -157,7 +159,16 @@ class BookingService implements IBookingService {
       if (!success) {
         throw DatabaseException('Không thể xác nhận thanh toán ở hệ thống.');
       }
-      return await getBookingById(bookingId);
+      final booking = await getBookingById(bookingId);
+
+      // Gửi email xác nhận ở background, không để lỗi gửi email làm chặn luồng thành công
+      try {
+        await emailService.sendTicketConfirmationEmail(booking);
+      } catch (e) {
+        debugPrint('[BookingService] Gửi email xác nhận vé thất bại: $e');
+      }
+
+      return booking;
     } catch (e) {
       if (e is AppException) rethrow;
       throw DatabaseException('Thanh toán thất bại: $e');
@@ -185,6 +196,13 @@ class BookingService implements IBookingService {
   @override
   Future<List<Booking>> getBookingHistory() async {
     try {
+      // 1. Tự động dọn dẹp các đơn đặt vé đã quá hạn 5 phút trong cơ sở dữ liệu
+      try {
+        await _supabase.rpc('expire_old_bookings');
+      } catch (e) {
+        debugPrint('Lỗi tự động dọn dẹp đơn hết hạn trong getBookingHistory: $e');
+      }
+
       final currentUserId = _supabase.auth.currentUser?.id;
       if (currentUserId == null) {
         throw AuthException('Vui lòng đăng nhập để xem lịch sử');

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/api/app_exception.dart';
 import '../models/movie.dart';
@@ -151,6 +152,13 @@ class MovieService implements IMovieService {
           .order('row')
           .order('number');
 
+      // Dọn dẹp tự động các đơn booking/vé chờ PENDING quá 5 phút trước khi lấy danh sách ghế
+      try {
+        await _supabase.rpc('expire_old_bookings');
+      } catch (e) {
+        debugPrint('[MovieService] Dọn dẹp booking hết hạn: $e');
+      }
+
       // 3. Lấy tất cả ghế đã được đặt cho showtime này (bookings PENDING hoặc CONFIRMED)
       final bookedSeatsResponse = await _supabase
           .from('booking_seats')
@@ -162,8 +170,9 @@ class MovieService implements IMovieService {
           .map((item) => item['seat_id'] as int)
           .toList();
 
-      // 3b. Lấy các ghế đang bị giữ tạm thời bởi người khác (chưa hết hạn)
+      // 3b. Lấy các ghế đang bị giữ tạm thời bởi người khác & bởi chính mình (chưa hết hạn)
       List<int> heldSeatIds = [];
+      List<int> currentUserHoldSeatIds = [];
       try {
         final currentUserId = _supabase.auth.currentUser?.id;
         final nowStr = DateTime.now().toUtc().toIso8601String();
@@ -173,13 +182,20 @@ class MovieService implements IMovieService {
             .eq('showtime_id', id)
             .gt('expires_at', nowStr);
 
-        heldSeatIds = (holdsResponse as List)
+        final holdsList = holdsResponse as List;
+        heldSeatIds = holdsList
             .where((item) => item['user_id'] != currentUserId)
             .map((item) => item['seat_id'] as int)
             .toList();
+
+        if (currentUserId != null) {
+          currentUserHoldSeatIds = holdsList
+              .where((item) => item['user_id'] == currentUserId)
+              .map((item) => item['seat_id'] as int)
+              .toList();
+        }
       } catch (e) {
-        // Bỏ qua lỗi nếu bảng seat_holds chưa được khởi tạo ở local
-        print('Lỗi tải seat holds: $e');
+        debugPrint('Lỗi tải seat holds: $e');
       }
 
       // 4. Tạo sơ đồ ghế
@@ -191,7 +207,11 @@ class MovieService implements IMovieService {
               ))
           .toList();
 
-      return ShowtimeDetail(showtime: showtime, seats: seats);
+      return ShowtimeDetail(
+        showtime: showtime,
+        seats: seats,
+        currentUserHoldSeatIds: currentUserHoldSeatIds,
+      );
     } catch (e) {
       throw DatabaseException('Không thể tải chi tiết sơ đồ ghế của lịch chiếu: $e');
     }

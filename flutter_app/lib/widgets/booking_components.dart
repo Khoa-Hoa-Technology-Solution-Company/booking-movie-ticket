@@ -23,6 +23,7 @@ class SeatWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     final bool isBooked = seat.status == SeatStatus.booked;
     final bool isMaintenance = seat.status == SeatStatus.maintenance || !seat.isActive;
     final bool isHeld = seat.status == SeatStatus.held;
@@ -31,55 +32,81 @@ class SeatWidget extends StatelessWidget {
     IconData? icon;
 
     if (isBooked) {
-      seatColor = const Color(0xFF1E1E2E); // Dark charcoal
-      icon = Icons.close_rounded; // Dấu X cho ghế đã đặt
+      seatColor = isLight ? const Color(0xFFCBD5E1) : const Color(0xFF1E1E2E);
+      icon = Icons.close_rounded;
     } else if (isHeld) {
       seatColor = Colors.orange;
       icon = Icons.person_outline;
     } else if (isMaintenance) {
-      seatColor = Colors.grey.shade800;
-      icon = Icons.construction; // Wrench/hammer icon
+      seatColor = isLight ? Colors.grey.shade300 : Colors.grey.shade800;
+      icon = Icons.construction;
     } else if (isSelected) {
-      seatColor = const Color(0xFF4ADE80); // Emerald Green
-      icon = Icons.check_rounded; // Dấu check cho ghế đang chọn
+      seatColor = const Color(0xFF22C55E); // Emerald Green
+      icon = Icons.check_rounded;
     } else {
-      // Color according to SeatType
       if (seat.type == SeatType.vip) {
-        seatColor = const Color(0xFFF97316); // Amber/Orange
+        seatColor = const Color(0xFFF97316); // Orange
       } else if (seat.type == SeatType.couple) {
-        seatColor = const Color(0xFFEF4444); // Crimson Red
-        icon = Icons.favorite_rounded; // Trái tim cho ghế đôi
+        seatColor = const Color(0xFFEF4444); // Red
+        icon = Icons.favorite_rounded;
       } else {
-        seatColor = Colors.white54; // Standard
+        seatColor = isLight ? const Color(0xFF475569) : Colors.white54; // Dark slate 600 in light mode
       }
     }
+
+    final Color contentColor = isSelected
+        ? Colors.black
+        : (isBooked
+            ? (isLight ? const Color(0xFF64748B) : Colors.white24)
+            : (isHeld || isMaintenance
+                ? Colors.white
+                : (isLight
+                    ? (seat.type == SeatType.vip
+                        ? const Color(0xFFEA580C)
+                        : (seat.type == SeatType.couple ? const Color(0xFFDC2626) : const Color(0xFF0F172A)))
+                    : Colors.white70)));
 
     final Widget innerContent = Center(
       child: icon != null
           ? Icon(
               icon,
-              color: isBooked ? Colors.white24 : (isSelected ? Colors.black : Colors.white70),
+              color: contentColor,
               size: 14,
             )
           : Text(
               '${seat.number}',
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.white70,
+                color: contentColor,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
     );
 
+    Color fillColor;
+    if (isSelected || isBooked || isMaintenance || isHeld) {
+      fillColor = seatColor;
+    } else if (isLight) {
+      if (seat.type == SeatType.vip) {
+        fillColor = const Color(0xFFFFF7ED);
+      } else if (seat.type == SeatType.couple) {
+        fillColor = const Color(0xFFFEF2F2);
+      } else {
+        fillColor = const Color(0xFFF1F5F9);
+      }
+    } else {
+      fillColor = Colors.transparent;
+    }
+
     Widget seatBox;
     if (seat.type == SeatType.vip && !isBooked && !isMaintenance && !isHeld && !isSelected) {
-      // Viền đôi cho ghế VIP khi chưa chọn
       seatBox = Container(
         width: 32,
         height: 32,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
+          color: fillColor,
           border: Border.all(color: seatColor, width: 1),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -98,7 +125,7 @@ class SeatWidget extends StatelessWidget {
         height: 32,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: (isSelected || isBooked || isMaintenance || isHeld) ? seatColor : Colors.transparent,
+          color: fillColor,
           border: Border.all(
             color: seatColor,
             width: 2,

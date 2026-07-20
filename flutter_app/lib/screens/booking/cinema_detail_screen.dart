@@ -377,7 +377,7 @@ class _CinemaDetailScreenState extends State<CinemaDetailScreen> {
                             style: GoogleFonts.outfit(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -402,7 +402,7 @@ class _CinemaDetailScreenState extends State<CinemaDetailScreen> {
                                 Text(
                                   movie.rating.toStringAsFixed(1),
                                   style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
+                                    color: AppColors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -422,7 +422,7 @@ class _CinemaDetailScreenState extends State<CinemaDetailScreen> {
                                 style: GoogleFonts.robotoMono(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ),

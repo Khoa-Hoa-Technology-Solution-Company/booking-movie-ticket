@@ -112,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
@@ -141,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       Text('MovieTicket',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: GoogleFonts.outfit(fontSize: 30, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                       const SizedBox(height: 6),
                       Text('Đăng nhập để đặt vé và bảo vệ tài khoản',
                         textAlign: TextAlign.center,
@@ -152,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
@@ -170,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Mật khẩu',
                           prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary),

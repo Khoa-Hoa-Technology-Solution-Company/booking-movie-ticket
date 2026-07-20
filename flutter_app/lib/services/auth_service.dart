@@ -207,7 +207,13 @@ class AuthService implements IAuthService {
       final is2FAEnabled = userProfile['two_factor_enabled'] == true;
       if (is2FAEnabled) {
         // Gửi OTP 2FA thông qua Supabase signInWithOtp
-        await _supabase.auth.signInWithOtp(email: email);
+        try {
+          await _supabase.auth.signInWithOtp(email: email);
+        } on sb.AuthException catch (e) {
+          throw _mapAuthException(e);
+        } catch (e) {
+          throw AuthException('Gửi mã OTP xác thực 2 lớp (2FA) thất bại: $e');
+        }
         // Đăng xuất ngay lập tức để huỷ session vừa tạo bằng password
         await _supabase.auth.signOut();
         // Ném exception để UI chuyển sang Verify2FAScreen
@@ -485,6 +491,8 @@ class AuthService implements IAuthService {
       return AuthException('Email này đã được đăng ký cho tài khoản khác.', 'user_already_exists');
     } else if (msg.contains('password is too short')) {
       return AuthException('Mật khẩu tối thiểu phải từ 6 ký tự trở lên.', 'password_too_short');
+    } else if (msg.contains('error sending magic link email') || msg.contains('unexpected_failure')) {
+      return AuthException('Không thể gửi mã OTP xác thực 2 lớp (2FA) qua Email. Supabase mặc định giới hạn gửi thư hoặc chưa cấu hình Custom SMTP trên Supabase Dashboard.', 'email_send_error');
     }
     return AuthException(e.message);
   }

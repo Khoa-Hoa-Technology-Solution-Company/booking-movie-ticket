@@ -185,6 +185,9 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       setState(() {
         _showtimeDetail = showtimeDetail;
         _selectedSeatIds.clear();
+        if (showtimeDetail.currentUserHoldSeatIds.isNotEmpty) {
+          _selectedSeatIds.addAll(showtimeDetail.currentUserHoldSeatIds);
+        }
         _appliedPromo = null;
         _discountAmount = 0.0;
         _promoError = null;
@@ -209,6 +212,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       setState(() {
         _showtimeDetail = showtimeDetail;
         
+        if (_selectedSeatIds.isEmpty && showtimeDetail.currentUserHoldSeatIds.isNotEmpty) {
+          _selectedSeatIds.addAll(showtimeDetail.currentUserHoldSeatIds);
+        }
+
         // Lọc bỏ những ghế không còn khả dụng cho user hiện tại (đã bị người khác đặt hoặc giữ)
         final List<int> noLongerAvailable = [];
         for (var seatId in _selectedSeatIds) {
@@ -316,6 +323,20 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     _syncSeatHold(seat.id, isSelecting);
   }
 
+  Future<void> _releaseUserSeatHolds() async {
+    final supabase = Supabase.instance.client;
+    final currentUserId = supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+    try {
+      await supabase.from('seat_holds').delete().match({
+        'showtime_id': widget.showtimeId,
+        'user_id': currentUserId,
+      });
+    } catch (e) {
+      debugPrint('Lỗi giải phóng giữ ghế khi thoát: $e');
+    }
+  }
+
   Future<void> _syncSeatHold(int seatId, bool isSelecting) async {
     final supabase = Supabase.instance.client;
     final currentUserId = supabase.auth.currentUser?.id;
@@ -323,6 +344,13 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
     try {
       if (isSelecting) {
+        // Xóa mọi giữ ghế cũ trùng hợp trước nếu có để không bị lỗi unique constraint
+        await supabase.from('seat_holds').delete().match({
+          'seat_id': seatId,
+          'showtime_id': widget.showtimeId,
+          'user_id': currentUserId,
+        });
+
         await supabase.from('seat_holds').insert({
           'seat_id': seatId,
           'showtime_id': widget.showtimeId,
@@ -377,6 +405,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     if (_isLoading || _showtimeDetail == null) {
@@ -404,25 +433,35 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
 
     final double subtotal = _calculateSubtotal();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Chọn Ghế', style: AppTextStyles.titleSmall),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: true,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white10,
-              borderRadius: BorderRadius.circular(10),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _releaseUserSeatHolds();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text('Chọn Ghế', style: AppTextStyles.titleSmall),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          centerTitle: true,
+          leading: GestureDetector(
+            onTap: () async {
+              await _releaseUserSeatHolds();
+              if (mounted) Navigator.pop(context);
+            },
+            child: Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceHigh,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textPrimary),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
           ),
         ),
-      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -439,7 +478,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                     showtime.movie?.title ?? 'Phim',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: GoogleFonts.outfit(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -473,7 +512,7 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text('MÀN HÌNH CHIẾU',
-                  style: GoogleFonts.robotoMono(color: AppColors.textMuted, fontSize: 9, letterSpacing: 3)),
+                  style: GoogleFonts.robotoMono(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 3)),
               ],
             ),
           ),
@@ -506,7 +545,14 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                         children: [
                           SizedBox(
                             width: 22,
-                            child: Text(rowLetter, style: AppTextStyles.seatLabel.copyWith(color: AppColors.textMuted)),
+                            child: Text(
+                              rowLetter,
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           ...List.generate(totalColumns, (colIdx) {
                             final seat = grid[rowIdx][colIdx];
@@ -543,16 +589,16 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                         child: TextField(
                           controller: _promoController,
                           enabled: _appliedPromo == null,
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             hintText: 'Mã khuyến mãi (VD: WELCOME10)',
-                            hintStyle: AppTextStyles.caption,
+                            hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
+                            fillColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF1F5F9) : Colors.white.withOpacity(0.05),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                            prefixIcon: Icon(Icons.local_offer_outlined, color: AppColors.textMuted, size: 16),
+                            prefixIcon: Icon(Icons.local_offer_outlined, color: AppColors.textSecondary, size: 16),
                           ),
                         ),
                       ),
@@ -649,10 +695,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildLegends() {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final standardColor = isLight ? const Color(0xFF475569) : const Color(0xFFB0B0C8);
+    final bookedColor = isLight ? const Color(0xFFCBD5E1) : const Color(0xFF2D2D3E);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -666,13 +717,13 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
           alignment: WrapAlignment.center,
           spacing: 14,
           runSpacing: 6,
-          children: const [
-            _LegendItem(color: Color(0xFFB0B0C8), label: 'Thường'),
-            _LegendItem(color: Color(0xFFF97316), label: 'VIP (Viền đôi)', isVip: true),
-            _LegendItem(color: Color(0xFFEF4444), label: 'Đôi (♥)', isCouple: true),
-            _LegendItem(color: Color(0xFF4ADE80), label: 'Đang chọn (✓)', filled: true, isSelected: true),
-            _LegendItem(color: Color(0xFFF59E0B), label: 'Đang giữ', filled: true, isHeld: true),
-            _LegendItem(color: Color(0xFF2D2D3E), label: 'Đã đặt (✕)', filled: true, locked: true),
+          children: [
+            _LegendItem(color: standardColor, label: 'Thường', isStandard: true),
+            const _LegendItem(color: Color(0xFFF97316), label: 'VIP (Viền đôi)', isVip: true),
+            const _LegendItem(color: Color(0xFFEF4444), label: 'Đôi (♥)', isCouple: true),
+            const _LegendItem(color: Color(0xFF22C55E), label: 'Đang chọn (✓)', filled: true, isSelected: true),
+            const _LegendItem(color: Color(0xFFF59E0B), label: 'Đang giữ', filled: true, isHeld: true),
+            _LegendItem(color: bookedColor, label: 'Đã đặt (✕)', filled: true, locked: true),
           ],
         ),
       ),
@@ -689,6 +740,7 @@ class _LegendItem extends StatelessWidget {
   final bool isCouple;
   final bool isSelected;
   final bool isHeld;
+  final bool isStandard;
 
   const _LegendItem({
     required this.color,
@@ -699,10 +751,20 @@ class _LegendItem extends StatelessWidget {
     this.isCouple = false,
     this.isSelected = false,
     this.isHeld = false,
+    this.isStandard = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final Color itemFill = filled
+        ? color
+        : (isLight
+            ? (isVip
+                ? const Color(0xFFFFF7ED)
+                : (isCouple ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9)))
+            : color.withOpacity(0.15));
+
     Widget shape;
     if (isVip) {
       shape = Container(
@@ -710,6 +772,7 @@ class _LegendItem extends StatelessWidget {
         height: 14,
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
+          color: itemFill,
           border: Border.all(color: color, width: 0.8),
           borderRadius: BorderRadius.circular(4),
         ),
@@ -725,15 +788,15 @@ class _LegendItem extends StatelessWidget {
         width: 14,
         height: 14,
         decoration: BoxDecoration(
-          color: filled ? color : color.withOpacity(0.15),
+          color: itemFill,
           border: Border.all(color: color, width: 1.5),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
           child: locked
-              ? const Icon(Icons.close_rounded, size: 8, color: Colors.white38)
+              ? Icon(Icons.close_rounded, size: 8, color: isLight ? const Color(0xFF64748B) : Colors.white38)
               : isCouple
-                  ? const Icon(Icons.favorite_rounded, size: 8, color: Colors.white)
+                  ? Icon(Icons.favorite_rounded, size: 8, color: isLight ? const Color(0xFFDC2626) : Colors.white)
                   : isSelected
                       ? const Icon(Icons.check_rounded, size: 8, color: Colors.black)
                       : isHeld
@@ -748,7 +811,14 @@ class _LegendItem extends StatelessWidget {
       children: [
         shape,
         const SizedBox(width: 5),
-        Text(label, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }

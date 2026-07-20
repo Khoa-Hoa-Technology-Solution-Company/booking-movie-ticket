@@ -13,6 +13,8 @@ import '../../models/showtime.dart';
 import '../../widgets/booking_components.dart';
 import '../../services/booking_service.dart';
 import '../../services/movie_service.dart';
+import '../../services/email_service.dart';
+import '../../widgets/payment_countdown_timer.dart';
 
 class FoodSelectionScreen extends StatefulWidget {
   final int showtimeId;
@@ -31,6 +33,8 @@ class FoodSelectionScreen extends StatefulWidget {
 }
 
 class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
+  final DateTime _holdStartTime = DateTime.now();
+  Booking? _createdBooking;
   bool _isLoading = true;
   bool _isBooking = false;
   List<Product> _products = [];
@@ -208,6 +212,8 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
         promotionCode: widget.promotionCode,
         paymentMethod: paymentMethod,
       );
+
+      _createdBooking = booking;
 
       if (mounted) {
         if (paymentMethod == 'DEMO') {
@@ -544,6 +550,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     final double foodSubtotal = _getFoodSubtotal();
     final double totalAmount = _getTotalAmount();
@@ -567,10 +574,10 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white10,
+              color: AppColors.surfaceHigh,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+            child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textPrimary),
           ),
         ),
       ),
@@ -580,6 +587,39 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              PaymentCountdownTimer(
+                createdAt: _holdStartTime,
+                timeoutMinutes: 5,
+                onTimerExpired: () {
+                  if (_createdBooking != null) {
+                    emailService.sendHoldExpiredEmail(_createdBooking!);
+                  }
+                  if (mounted) {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => AlertDialog(
+                        backgroundColor: AppColors.surface,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: const Text('Hết thời gian giữ ghế!', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
+                        content: const Text('Đã quá 5 phút giữ ghế. Ghế đã được tự động giải phóng để người khác có thể đặt.'),
+                        actions: [
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black),
+                            child: const Text('Chọn lại ghế', style: TextStyle(fontWeight: FontWeight.bold)),
+                          )
+                        ],
+                      ),
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
               // Recommended Combos
               if (_combos.isNotEmpty) ...[
                 Row(
@@ -661,7 +701,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Vé xem phim:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                  Text(formatter.format(_seatsSubtotal), style: const TextStyle(color: Colors.white, fontSize: 13)),
+                  Text(formatter.format(_seatsSubtotal), style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
                 ],
               ),
               if (_discountAmount > 0) ...[
@@ -680,7 +720,7 @@ class _FoodSelectionScreenState extends State<FoodSelectionScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Bắp nước:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                    Text(formatter.format(foodSubtotal), style: const TextStyle(color: Colors.white, fontSize: 13)),
+                    Text(formatter.format(foodSubtotal), style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
                   ],
                 ),
               ],

@@ -21,6 +21,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -33,10 +34,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white10,
+              color: AppColors.surfaceHigh,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+            child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textPrimary),
           ),
         ),
       ),
@@ -152,11 +153,11 @@ class _AdminMoviesTabState extends State<_AdminMoviesTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162A),
-        title: const Text('Xác nhận xóa', style: TextStyle(color: Colors.white)),
-        content: const Text('Bạn có chắc chắn muốn xóa phim này khỏi hệ thống?', style: TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.surface,
+        title: Text('Xác nhận xóa', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text('Bạn có chắc chắn muốn xóa phim này khỏi hệ thống?', style: TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red))),
         ],
       ),
@@ -177,7 +178,7 @@ class _AdminMoviesTabState extends State<_AdminMoviesTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF16162A),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => _MovieFormBottomSheet(
         movie: movie,
@@ -195,24 +196,28 @@ class _AdminMoviesTabState extends State<_AdminMoviesTab> {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openMovieForm(),
-        backgroundColor: const Color(0xFFC084FC),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.black),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadMovies,
+              color: AppColors.primary,
               child: _movies.isEmpty
-                  ? const Center(child: Text('Chưa có phim nào', style: TextStyle(color: Colors.white54)))
+                  ? Center(child: Text('Chưa có phim nào', style: TextStyle(color: AppColors.textMuted)))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _movies.length,
                       itemBuilder: (context, index) {
                         final movie = _movies[index];
                         return Card(
-                          color: const Color(0xFF1E1B4B).withOpacity(0.4),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: AppColors.border),
+                          ),
                           child: ListTile(
                             leading: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
@@ -221,16 +226,16 @@ class _AdminMoviesTabState extends State<_AdminMoviesTab> {
                                 height: 60,
                                 child: movie.posterUrl != null
                                     ? Image.network(movie.posterUrl!, fit: BoxFit.cover)
-                                    : const Icon(Icons.movie, color: Colors.white24),
+                                    : Icon(Icons.movie, color: AppColors.textMuted),
                               ),
                             ),
-                            title: Text(movie.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            subtitle: Text('${movie.genre} • ${movie.duration} phút\nTrạng thái: ${movie.status.name.toUpperCase()}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                            title: Text(movie.title, style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                            subtitle: Text('${movie.genre} • ${movie.duration} phút\nTrạng thái: ${movie.status.name.toUpperCase()}', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                             isThreeLine: true,
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(icon: const Icon(Icons.edit, color: Color(0xFFC084FC), size: 20), onPressed: () => _openMovieForm(movie)),
+                                IconButton(icon: const Icon(Icons.edit, color: AppColors.primary, size: 20), onPressed: () => _openMovieForm(movie)),
                                 IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20), onPressed: () => _deleteMovie(movie.id)),
                               ],
                             ),
@@ -358,7 +363,7 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
             children: [
               Text(
                 widget.movie == null ? 'Thêm Phim Mới' : 'Cập Nhật Thông Tin Phim',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -366,8 +371,8 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
               // Title
               TextFormField(
                 controller: _titleController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Tên phim', labelStyle: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'Tên phim', labelStyle: TextStyle(color: AppColors.textSecondary)),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Nhập tên phim' : null,
               ),
               const SizedBox(height: 12),
@@ -375,9 +380,9 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
               // Description
               TextFormField(
                 controller: _descController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.textPrimary),
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Mô tả ngắn', labelStyle: TextStyle(color: Colors.white70)),
+                decoration: InputDecoration(labelText: 'Mô tả ngắn', labelStyle: TextStyle(color: AppColors.textSecondary)),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Nhập mô tả' : null,
               ),
               const SizedBox(height: 12),
@@ -389,8 +394,8 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                     child: TextFormField(
                       controller: _durationController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Thời lượng (phút)', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Thời lượng (phút)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       validator: (v) => v == null || int.tryParse(v) == null ? 'Nhập thời lượng' : null,
                     ),
                   ),
@@ -398,8 +403,8 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _genreController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Thể loại', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Thể loại', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       validator: (v) => v == null || v.trim().isEmpty ? 'Nhập thể loại' : null,
                     ),
                   ),
@@ -413,9 +418,9 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _ageRating,
-                      dropdownColor: const Color(0xFF16162A),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Giới hạn độ tuổi', labelStyle: TextStyle(color: Colors.white70)),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Giới hạn độ tuổi', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       items: ['P', 'C13', 'C16', 'C18'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                       onChanged: (v) => setState(() => _ageRating = v ?? 'P'),
                     ),
@@ -424,9 +429,9 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _status,
-                      dropdownColor: const Color(0xFF16162A),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Trạng thái', labelStyle: TextStyle(color: Colors.white70)),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Trạng thái', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       items: [
                         DropdownMenuItem(value: 'NOW_SHOWING', child: Text('Đang chiếu'.toUpperCase())),
                         DropdownMenuItem(value: 'COMING_SOON', child: Text('Sắp chiếu'.toUpperCase())),
@@ -445,16 +450,16 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _directorController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Đạo diễn', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Đạo diễn', labelStyle: TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _castController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Diễn viên', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Diễn viên', labelStyle: TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                 ],
@@ -464,14 +469,14 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
               // Poster & Trailer URLs
               TextFormField(
                 controller: _posterController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'URL Ảnh Poster', labelStyle: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'URL Ảnh Poster', labelStyle: TextStyle(color: AppColors.textSecondary)),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _trailerController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'URL Trailer Youtube (nếu có)', labelStyle: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'URL Trailer Youtube (nếu có)', labelStyle: TextStyle(color: AppColors.textSecondary)),
               ),
               const SizedBox(height: 16),
 
@@ -482,9 +487,9 @@ class _MovieFormBottomSheetState extends State<_MovieFormBottomSheet> {
                   _releaseDate == null
                       ? 'Chọn ngày phát hành'
                       : 'Ngày phát hành: ${DateFormat('dd/MM/yyyy').format(_releaseDate!)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 ),
-                trailing: const Icon(Icons.calendar_month, color: Color(0xFFC084FC)),
+                trailing: const Icon(Icons.calendar_month, color: AppColors.primary),
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
@@ -610,11 +615,11 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162A),
-        title: const Text('Xác nhận xóa', style: TextStyle(color: Colors.white)),
-        content: const Text('Bạn có muốn xóa lịch chiếu này không?', style: TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.surface,
+        title: Text('Xác nhận xóa', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text('Bạn có muốn xóa lịch chiếu này không?', style: TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red))),
         ],
       ),
@@ -635,7 +640,7 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF16162A),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => _ShowtimeFormBottomSheet(
         onSaved: () {
@@ -664,24 +669,24 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
             ? 'tất cả phim đang chiếu'
             : '${selectedMovieIds.length} phim đã chọn';
         return AlertDialog(
-          backgroundColor: const Color(0xFF16162A),
-          title: const Text('Chọn Số Ngày', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.surface,
+          title: Text('Chọn Số Ngày', style: TextStyle(color: AppColors.textPrimary)),
           content: Text(
             'Tạo lịch chiếu tự động cho $movieCountText. Chọn số ngày:',
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, 0),
-              child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+              child: Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, 3),
-              child: const Text('3 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+              child: const Text('3 Ngày', style: TextStyle(color: AppColors.primary)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, 7),
-              child: const Text('7 Ngày', style: TextStyle(color: Color(0xFFC084FC))),
+              child: const Text('7 Ngày', style: TextStyle(color: AppColors.primary)),
             ),
           ],
         );
@@ -795,13 +800,13 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                               child: DropdownButtonFormField<int?>(
                                 value: _selectedCinemaId,
                                 isExpanded: true,
-                                dropdownColor: const Color(0xFF16162A),
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
-                                decoration: const InputDecoration(
+                                dropdownColor: AppColors.surface,
+                                style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                                decoration: InputDecoration(
                                   labelText: 'Lọc theo Rạp',
-                                  labelStyle: TextStyle(color: Colors.white70, fontSize: 12),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  border: OutlineInputBorder(),
+                                  labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 items: [
                                   const DropdownMenuItem<int?>(
@@ -826,13 +831,13 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                               child: DropdownButtonFormField<int?>(
                                 value: _selectedMovieId,
                                 isExpanded: true,
-                                dropdownColor: const Color(0xFF16162A),
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
-                                decoration: const InputDecoration(
+                                dropdownColor: AppColors.surface,
+                                style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                                decoration: InputDecoration(
                                   labelText: 'Lọc theo Phim',
-                                  labelStyle: TextStyle(color: Colors.white70, fontSize: 12),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  border: OutlineInputBorder(),
+                                  labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 items: [
                                   const DropdownMenuItem<int?>(
@@ -861,7 +866,7 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                   // Paginated Showtimes List View
                   Expanded(
                     child: paginated.isEmpty
-                        ? const Center(child: Text('Không có suất chiếu nào phù hợp bộ lọc', style: TextStyle(color: Colors.white54)))
+                        ? Center(child: Text('Không có suất chiếu nào phù hợp bộ lọc', style: TextStyle(color: AppColors.textMuted)))
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: paginated.length,
@@ -872,16 +877,19 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                               final endStr = DateFormat('HH:mm').format(st.endTime);
 
                               return Card(
-                                color: const Color(0xFF1E1B4B).withOpacity(0.4),
+                                color: AppColors.surface,
                                 margin: const EdgeInsets.only(bottom: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(color: AppColors.border),
+                                ),
                                 child: ListTile(
-                                  title: Text(movieTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  title: Text(movieTitle, style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
                                   subtitle: Padding(
                                     padding: const EdgeInsets.only(top: 4.0),
                                     child: Text(
                                       '${st.cinema?.name} - ${st.room?.name} (${st.room?.roomType})\n$startStr - $endStr\nGiá vé: ${formatter.format(st.price)}',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                                     ),
                                   ),
                                   trailing: IconButton(
@@ -902,7 +910,7 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 16),
+                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textSecondary, size: 16),
                             onPressed: _currentPage > 1
                                 ? () => setState(() => _currentPage--)
                                 : null,
@@ -910,11 +918,11 @@ class _AdminShowtimesTabState extends State<_AdminShowtimesTab> {
                           const SizedBox(width: 12),
                           Text(
                             'Trang $_currentPage / $_totalPages',
-                            style: GoogleFonts.robotoMono(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            style: GoogleFonts.robotoMono(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           const SizedBox(width: 12),
                           IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+                            icon: Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textSecondary, size: 16),
                             onPressed: _currentPage < _totalPages
                                 ? () => setState(() => _currentPage++)
                                 : null,
@@ -949,8 +957,8 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
         .toList();
 
     return AlertDialog(
-      backgroundColor: const Color(0xFF16162A),
-      title: const Text('Chọn Phim Tạo Lịch', style: TextStyle(color: Colors.white, fontSize: 16)),
+      backgroundColor: AppColors.surface,
+      title: Text('Chọn Phim Tạo Lịch', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       content: SizedBox(
         width: double.maxFinite,
@@ -971,21 +979,21 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
               },
               title: const Text(
                 '✨ Tất cả phim đang chiếu',
-                style: TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
               ),
-              activeColor: const Color(0xFFC084FC),
+              activeColor: AppColors.primary,
               checkColor: Colors.black,
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            const Divider(color: Colors.white12),
+            Divider(color: AppColors.border),
 
             if (!_selectAll) ...[
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   'Chọn phim cụ thể (${_selectedIds.length}/${nowShowingMovies.length}):',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ),
             ],
@@ -997,12 +1005,12 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.select_all_rounded, size: 48, color: Color(0xFFC084FC)),
+                          const Icon(Icons.select_all_rounded, size: 48, color: AppColors.primary),
                           const SizedBox(height: 12),
                           Text(
                             'Sẽ tạo lịch cho ${nowShowingMovies.length} phim đang chiếu',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                           ),
                         ],
                       ),
@@ -1027,7 +1035,7 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
                           title: Text(
                             movie.title,
                             style: TextStyle(
-                              color: isChecked ? Colors.white : Colors.white70,
+                              color: isChecked ? AppColors.textPrimary : AppColors.textSecondary,
                               fontWeight: isChecked ? FontWeight.bold : FontWeight.normal,
                               fontSize: 13,
                             ),
@@ -1036,9 +1044,9 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
                           ),
                           subtitle: Text(
                             '${movie.duration} phút',
-                            style: const TextStyle(color: Colors.white38, fontSize: 11),
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                           ),
-                          activeColor: const Color(0xFFC084FC),
+                          activeColor: AppColors.primary,
                           checkColor: Colors.black,
                           controlAffinity: ListTileControlAffinity.leading,
                           contentPadding: EdgeInsets.zero,
@@ -1053,7 +1061,7 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+          child: Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
         ),
         TextButton(
           onPressed: (!_selectAll && _selectedIds.isEmpty)
@@ -1069,8 +1077,8 @@ class _MovieSelectionDialogState extends State<_MovieSelectionDialog> {
             'Tiếp tục',
             style: TextStyle(
               color: (!_selectAll && _selectedIds.isEmpty)
-                  ? Colors.white24
-                  : const Color(0xFFC084FC),
+                  ? AppColors.textMuted
+                  : AppColors.primary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1177,18 +1185,18 @@ class _ShowtimeFormBottomSheetState extends State<_ShowtimeFormBottomSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
+                    Text(
                       'Tạo Suất Chiếu Mới',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
 
                     // Dropdown Movie
                     DropdownButtonFormField<int>(
-                      dropdownColor: const Color(0xFF16162A),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Chọn phim', labelStyle: TextStyle(color: Colors.white70)),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Chọn phim', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       items: _movies.map((m) => DropdownMenuItem(value: m.id, child: Text(m.title, overflow: TextOverflow.ellipsis))).toList(),
                       onChanged: (v) => setState(() => _selectedMovieId = v),
                       validator: (v) => v == null ? 'Vui lòng chọn phim' : null,
@@ -1197,9 +1205,9 @@ class _ShowtimeFormBottomSheetState extends State<_ShowtimeFormBottomSheet> {
 
                     // Dropdown Room
                     DropdownButtonFormField<int>(
-                      dropdownColor: const Color(0xFF16162A),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Chọn phòng chiếu', labelStyle: TextStyle(color: Colors.white70)),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Chọn phòng chiếu', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       items: _rooms.map((r) {
                         final cinemaName = r['cinemas'] != null ? r['cinemas']['name'] : 'Rạp';
                         return DropdownMenuItem(
@@ -1216,8 +1224,8 @@ class _ShowtimeFormBottomSheetState extends State<_ShowtimeFormBottomSheet> {
                     TextFormField(
                       controller: _priceController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Giá vé cơ bản (đ)', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Giá vé cơ bản (đ)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       validator: (v) => v == null || double.tryParse(v) == null ? 'Nhập giá vé hợp lệ' : null,
                     ),
                     const SizedBox(height: 16),
@@ -1229,9 +1237,9 @@ class _ShowtimeFormBottomSheetState extends State<_ShowtimeFormBottomSheet> {
                         _selectedDateTime == null
                             ? 'Chọn thời gian chiếu'
                             : 'Bắt đầu: ${DateFormat('dd/MM/yyyy HH:mm').format(_selectedDateTime!)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
                       ),
-                      trailing: const Icon(Icons.access_time_rounded, color: Color(0xFFC084FC)),
+                      trailing: const Icon(Icons.access_time_rounded, color: AppColors.primary),
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
@@ -1258,7 +1266,7 @@ class _ShowtimeFormBottomSheetState extends State<_ShowtimeFormBottomSheet> {
                     ElevatedButton(
                       onPressed: _isSaving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFC084FC),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1372,28 +1380,31 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
         children: [
           // Manual Checkin Input Box
           Card(
-            color: const Color(0xFF16162A),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: AppColors.border),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Soát vé & Check-in', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text('Soát vé & Check-in', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _codeController,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Nhập mã vé (ví dụ: TKT-...)',
-                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
+                            hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.05),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            fillColor: AppColors.surfaceHigh,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
                       ),
@@ -1401,7 +1412,7 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
                       ElevatedButton(
                         onPressed: _isChecking ? null : () => _handleCheckIn(_codeController.text),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFC084FC),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1444,11 +1455,11 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
                   ),
                   if (_ticketInfo != null) ...[
                     const SizedBox(height: 12),
-                    const Divider(color: Colors.white10),
+                    Divider(color: AppColors.border),
                     const SizedBox(height: 6),
-                    Text('Phim: ${_ticketInfo!['bookings']?['showtimes']?['movies']?['title'] ?? 'N/A'}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text('Phòng: ${_ticketInfo!['bookings']?['showtimes']?['rooms']?['name'] ?? 'N/A'}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text('Lịch chiếu: ${DateFormat('dd/MM HH:mm').format(DateTime.parse(_ticketInfo!['bookings']?['showtimes']?['start_time']))}', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    Text('Phim: ${_ticketInfo!['bookings']?['showtimes']?['movies']?['title'] ?? 'N/A'}', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text('Phòng: ${_ticketInfo!['bookings']?['showtimes']?['rooms']?['name'] ?? 'N/A'}', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    Text('Lịch chiếu: ${DateFormat('dd/MM HH:mm').format(DateTime.parse(_ticketInfo!['bookings']?['showtimes']?['start_time']))}', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   ],
                 ],
               ),
@@ -1457,13 +1468,13 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
           ],
 
           // Quick testing list
-          const Text('Vé chưa check-in mới bán', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)),
+          Text('Vé chưa check-in mới bán', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 8),
           Expanded(
             child: _isLoadingList
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : _activeTickets.isEmpty
-                    ? const Center(child: Text('Không có vé nào cần check-in', style: TextStyle(color: Colors.white24)))
+                    ? Center(child: Text('Không có vé nào cần check-in', style: TextStyle(color: AppColors.textMuted)))
                     : ListView.builder(
                         itemCount: _activeTickets.length,
                         itemBuilder: (context, index) {
@@ -1474,13 +1485,17 @@ class _AdminCheckInTabState extends State<_AdminCheckInTab> {
                           final seatNames = seatsList.map((s) => s['seats'] != null ? '${s['seats']['row']}${s['seats']['number']}' : '').join(', ');
 
                           return Card(
-                            color: const Color(0xFF1E1B4B).withOpacity(0.2),
+                            color: AppColors.surface,
                             margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: AppColors.border),
+                            ),
                             child: ListTile(
-                              title: Text(code, style: const TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold, fontSize: 14)),
-                              subtitle: Text('$movieTitle • Ghế: $seatNames', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                              title: Text(code, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                              subtitle: Text('$movieTitle • Ghế: $seatNames', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
                               trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white12, foregroundColor: Colors.white),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.surfaceHigh, foregroundColor: AppColors.textPrimary),
                                 onPressed: () {
                                   _codeController.text = code;
                                   _handleCheckIn(code);
@@ -1545,11 +1560,11 @@ class _AdminPromotionsTabState extends State<_AdminPromotionsTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162A),
-        title: const Text('Xác nhận xóa', style: TextStyle(color: Colors.white)),
-        content: const Text('Bạn có chắc chắn muốn xóa mã khuyến mãi này?', style: TextStyle(color: Colors.white70)),
+        backgroundColor: AppColors.surface,
+        title: Text('Xác nhận xóa', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text('Bạn có chắc chắn muốn xóa mã khuyến mãi này?', style: TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red))),
         ],
       ),
@@ -1570,7 +1585,7 @@ class _AdminPromotionsTabState extends State<_AdminPromotionsTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF16162A),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => _PromotionFormBottomSheet(
         onSaved: () {
@@ -1588,15 +1603,16 @@ class _AdminPromotionsTabState extends State<_AdminPromotionsTab> {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
         onPressed: _openPromoForm,
-        backgroundColor: const Color(0xFFC084FC),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.black),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadPromotions,
+              color: AppColors.primary,
               child: _promos.isEmpty
-                  ? const Center(child: Text('Chưa có mã khuyến mãi nào', style: TextStyle(color: Colors.white54)))
+                  ? Center(child: Text('Chưa có mã khuyến mãi nào', style: TextStyle(color: AppColors.textMuted)))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _promos.length,
@@ -1610,13 +1626,16 @@ class _AdminPromotionsTabState extends State<_AdminPromotionsTab> {
                         final count = p['usage_count'] as int? ?? 0;
 
                         return Card(
-                          color: const Color(0xFF1E1B4B).withOpacity(0.4),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: AppColors.border),
+                          ),
                           child: ListTile(
                             title: Row(
                               children: [
-                                Text(code, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                Text(code, style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
                                 const SizedBox(width: 10),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1632,7 +1651,7 @@ class _AdminPromotionsTabState extends State<_AdminPromotionsTab> {
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
                                 'Giảm giá $percent%\nĐơn tối thiểu: ${formatter.format(minPurchase)}\nĐã dùng: $count/${limit ?? "Không giới hạn"}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                               ),
                             ),
                             trailing: IconButton(
@@ -1724,14 +1743,14 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Thêm Mã Khuyến Mãi Mới', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text('Thêm Mã Khuyến Mãi Mới', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 20),
 
               // Code
               TextFormField(
                 controller: _codeController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Mã code (ví dụ: TANG10)', labelStyle: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(labelText: 'Mã code (ví dụ: TANG10)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Nhập mã code' : null,
               ),
               const SizedBox(height: 12),
@@ -1743,8 +1762,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                     child: TextFormField(
                       controller: _percentController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Giảm (%)', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Giảm (%)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                       validator: (v) => v == null || int.tryParse(v) == null ? 'Nhập tỉ lệ giảm' : null,
                     ),
                   ),
@@ -1753,8 +1772,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                     child: TextFormField(
                       controller: _limitController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Giới hạn số lần dùng', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Giới hạn số lần dùng', labelStyle: TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                 ],
@@ -1768,8 +1787,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                     child: TextFormField(
                       controller: _minController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Đơn tối thiểu (đ)', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Đơn tối thiểu (đ)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -1777,8 +1796,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                     child: TextFormField(
                       controller: _maxController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Giảm tối đa (đ)', labelStyle: TextStyle(color: Colors.white70)),
+                      style: TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(labelText: 'Giảm tối đa (đ)', labelStyle: TextStyle(color: AppColors.textSecondary)),
                     ),
                   ),
                 ],
@@ -1791,8 +1810,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(_startDate == null ? 'Bắt đầu' : DateFormat('dd/MM/yy').format(_startDate!), style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      trailing: const Icon(Icons.date_range, color: Color(0xFFC084FC), size: 18),
+                      title: Text(_startDate == null ? 'Bắt đầu' : DateFormat('dd/MM/yy').format(_startDate!), style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      trailing: const Icon(Icons.date_range, color: AppColors.primary, size: 18),
                       onTap: () async {
                         final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2025), lastDate: DateTime(2030));
                         if (date != null) setState(() => _startDate = date);
@@ -1803,8 +1822,8 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(_endDate == null ? 'Kết thúc' : DateFormat('dd/MM/yy').format(_endDate!), style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      trailing: const Icon(Icons.date_range, color: Color(0xFFC084FC), size: 18),
+                      title: Text(_endDate == null ? 'Kết thúc' : DateFormat('dd/MM/yy').format(_endDate!), style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      trailing: const Icon(Icons.date_range, color: AppColors.primary, size: 18),
                       onTap: () async {
                         final date = await showDatePicker(context: context, initialDate: DateTime.now().add(const Duration(days: 7)), firstDate: DateTime(2025), lastDate: DateTime(2030));
                         if (date != null) setState(() => _endDate = date);
@@ -1818,9 +1837,9 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
               // Active Switch
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Kích hoạt mã sử dụng ngay', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                title: Text('Kích hoạt mã sử dụng ngay', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                 value: _active,
-                activeColor: const Color(0xFFC084FC),
+                activeColor: AppColors.primary,
                 onChanged: (v) => setState(() => _active = v),
               ),
               const SizedBox(height: 24),
@@ -1829,7 +1848,7 @@ class _PromotionFormBottomSheetState extends State<_PromotionFormBottomSheet> {
               ElevatedButton(
                 onPressed: _isSaving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFC084FC),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1897,16 +1916,16 @@ class _AdminUsersTabState extends State<_AdminUsersTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16162A),
-        title: Text(isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản', style: const TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.surface,
+        title: Text(isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản', style: TextStyle(color: AppColors.textPrimary)),
         content: Text(
           isLocked
               ? 'Bạn có muốn mở khóa tài khoản của ${user['name']}?'
               : 'Bạn có muốn khóa vĩnh viễn tài khoản của ${user['name']}? Người dùng sẽ không thể đăng nhập.',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Hủy', style: TextStyle(color: AppColors.textMuted))),
           TextButton(onPressed: () => Navigator.pop(context, true), child: Text(isLocked ? 'Mở khóa' : 'Khóa', style: TextStyle(color: isLocked ? Colors.green : Colors.red))),
         ],
       ),
@@ -1928,11 +1947,12 @@ class _AdminUsersTabState extends State<_AdminUsersTab> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadUsers,
+              color: AppColors.primary,
               child: _users.isEmpty
-                  ? const Center(child: Text('Không có người dùng nào', style: TextStyle(color: Colors.white54)))
+                  ? Center(child: Text('Không có người dùng nào', style: TextStyle(color: AppColors.textMuted)))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _users.length,
@@ -1946,20 +1966,23 @@ class _AdminUsersTabState extends State<_AdminUsersTab> {
                         final isLocked = lockedUntilStr != null && DateTime.parse(lockedUntilStr).isAfter(DateTime.now());
 
                         return Card(
-                          color: const Color(0xFF1E1B4B).withOpacity(0.4),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: AppColors.border),
+                          ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: isLocked ? Colors.red.withOpacity(0.15) : const Color(0xFFC084FC).withOpacity(0.15),
+                              backgroundColor: isLocked ? Colors.red.withOpacity(0.15) : AppColors.primaryDim,
                               child: Icon(
                                 isLocked ? Icons.block : (role == 'ADMIN' ? Icons.admin_panel_settings : Icons.person),
-                                color: isLocked ? Colors.red : const Color(0xFFC084FC),
+                                color: isLocked ? Colors.red : AppColors.primary,
                               ),
                             ),
                             title: Row(
                               children: [
-                                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(name, style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
                                 const SizedBox(width: 8),
                                 if (role == 'ADMIN')
                                   Container(
@@ -1969,7 +1992,7 @@ class _AdminUsersTabState extends State<_AdminUsersTab> {
                                   ),
                               ],
                             ),
-                            subtitle: Text('$email\nTrạng thái: ${isLocked ? "BỊ KHÓA" : "HOẠT ĐỘNG"}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                            subtitle: Text('$email\nTrạng thái: ${isLocked ? "BỊ KHÓA" : "HOẠT ĐỘNG"}', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                             isThreeLine: true,
                             trailing: role == 'ADMIN'
                                 ? null // Không cho phép khóa tài khoản admin khác trực tiếp trên client
@@ -2052,11 +2075,11 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Thống kê theo khoảng thời gian:', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                Text('Thống kê theo khoảng thời gian:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 DropdownButton<int>(
                   value: _rangeDays,
-                  dropdownColor: const Color(0xFF16162A),
-                  style: const TextStyle(color: Color(0xFFC084FC), fontWeight: FontWeight.bold),
+                  dropdownColor: AppColors.surface,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                   items: const [
                     DropdownMenuItem(value: 7, child: Text('7 Ngày Qua')),
                     DropdownMenuItem(value: 30, child: Text('30 Ngày Qua')),
@@ -2076,7 +2099,7 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
             const SizedBox(height: 16),
 
             _isLoading
-                ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator(color: Color(0xFFC084FC))))
+                ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator(color: AppColors.primary)))
                 : Column(
                     children: [
                       // Overview Cards
@@ -2107,7 +2130,7 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
                       _SectionContainer(
                         title: 'Top Phim Doanh Thu Cao',
                         child: topMovies.isEmpty
-                            ? const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Không có dữ liệu phim', style: TextStyle(color: Colors.white30))))
+                            ? Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Không có dữ liệu phim', style: TextStyle(color: AppColors.textMuted))))
                             : Column(
                                 children: topMovies.map((item) {
                                   final title = item['title'] as String? ?? 'Phim';
@@ -2123,8 +2146,8 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-                                            Text(formatter.format(rev), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                            Expanded(child: Text(title, style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
+                                            Text(formatter.format(rev), style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                                           ],
                                         ),
                                         const SizedBox(height: 6),
@@ -2133,12 +2156,12 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
                                           child: Container(
                                             height: 8,
                                             width: double.infinity,
-                                            color: Colors.white.withOpacity(0.05),
+                                            color: AppColors.surfaceHigh,
                                             child: Align(
                                               alignment: Alignment.centerLeft,
                                               child: Container(
                                                 width: MediaQuery.of(context).size.width * 0.7 * percent,
-                                                color: const Color(0xFFC084FC),
+                                                color: AppColors.primary,
                                               ),
                                             ),
                                           ),
@@ -2155,7 +2178,7 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
                       _SectionContainer(
                         title: 'Tỉ Lệ Lấp Đầy Ghế Lịch Chiếu',
                         child: roomOccupancy.isEmpty
-                            ? const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Không có suất chiếu', style: TextStyle(color: Colors.white30))))
+                            ? Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Không có suất chiếu', style: TextStyle(color: AppColors.textMuted))))
                             : Column(
                                 children: roomOccupancy.map((item) {
                                   final movie = item['movie_title'] as String? ?? 'Phim';
@@ -2177,9 +2200,9 @@ class _AdminAnalyticsTabState extends State<_AdminAnalyticsTab> {
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(movie, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                                              Text(movie, style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
                                               const SizedBox(height: 2),
-                                              Text('$cinema • $startStr', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                                              Text('$cinema • $startStr', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
                                             ],
                                           ),
                                         ),
@@ -2228,9 +2251,9 @@ class _AnalyticsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF16162A),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2238,14 +2261,14 @@ class _AnalyticsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              Text(title, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
               Icon(icon, color: iconColor, size: 20),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -2268,12 +2291,12 @@ class _SectionContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(title, style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           child,
         ],
@@ -2697,20 +2720,20 @@ class _VisualSeatGridEditorSheetState extends State<_VisualSeatGridEditorSheet> 
               onTap: onDec,
               child: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
-                child: const Icon(Icons.remove, size: 14, color: Colors.white),
+                decoration: BoxDecoration(color: AppColors.surfaceHigh, borderRadius: BorderRadius.circular(6)),
+                child: Icon(Icons.remove, size: 14, color: AppColors.textPrimary),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Text('$value', style: GoogleFonts.robotoMono(fontSize: 15, fontWeight: FontWeight.bold)),
+              child: Text('$value', style: GoogleFonts.robotoMono(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             ),
             GestureDetector(
               onTap: onInc,
               child: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
-                child: const Icon(Icons.add, size: 14, color: Colors.white),
+                decoration: BoxDecoration(color: AppColors.surfaceHigh, borderRadius: BorderRadius.circular(6)),
+                child: Icon(Icons.add, size: 14, color: AppColors.textPrimary),
               ),
             ),
           ],

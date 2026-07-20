@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/security_service.dart';
 import '../../models/security.dart';
+import '../../core/theme/app_theme.dart';
 
 class SecurityAlertsScreen extends StatefulWidget {
   const SecurityAlertsScreen({super.key});
@@ -40,22 +41,23 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Cảnh Báo Bảo Mật', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadAlerts,
-              color: const Color(0xFFC084FC),
+              color: AppColors.primary,
               child: _alerts.isEmpty
-                  ? const Center(
-                      child: Text('Không có cảnh báo bảo mật nào', style: TextStyle(color: Colors.white54)),
+                  ? Center(
+                      child: Text('Không có cảnh báo bảo mật nào', style: TextStyle(color: AppColors.textSecondary)),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -83,7 +85,7 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
                         }
 
                         return Card(
-                          color: const Color(0xFF16162A),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -106,8 +108,8 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
                                           Expanded(
                                             child: Text(
                                               type.replaceAll('_', ' '),
-                                              style: const TextStyle(
-                                                color: Colors.white,
+                                              style: TextStyle(
+                                                color: AppColors.textPrimary,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
                                               ),
@@ -115,14 +117,14 @@ class _SecurityAlertsScreenState extends State<SecurityAlertsScreen> {
                                           ),
                                           Text(
                                             dateStr,
-                                            style: const TextStyle(color: Colors.white30, fontSize: 10),
+                                            style: TextStyle(color: AppColors.textMuted, fontSize: 10),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
                                         message,
-                                        style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                                       ),
                                     ],
                                   ),

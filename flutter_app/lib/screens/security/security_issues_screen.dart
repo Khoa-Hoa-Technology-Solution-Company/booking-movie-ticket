@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/security_service.dart';
 import '../../models/security.dart';
+import '../../core/theme/app_theme.dart';
 
 class SecurityIssuesScreen extends StatefulWidget {
   const SecurityIssuesScreen({super.key});
@@ -39,19 +40,20 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Sự Cố Bảo Mật', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
               onRefresh: _loadIssues,
-              color: const Color(0xFFC084FC),
+              color: AppColors.primary,
               child: _issues.isEmpty
                   ? _buildSuccessView()
                   : ListView.builder(
@@ -63,13 +65,13 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                         
                         Color severityColor = Colors.blue;
                         if (severity == 'CRITICAL' || severity == 'HIGH') {
-                          severityColor = Colors.redAccent;
+                           severityColor = Colors.redAccent;
                         } else if (severity == 'MEDIUM') {
                           severityColor = Colors.amberAccent;
                         }
 
                         return Card(
-                          color: const Color(0xFF16162A),
+                          color: AppColors.surface,
                           margin: const EdgeInsets.only(bottom: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -86,8 +88,8 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                                     Expanded(
                                       child: Text(
                                         issue.title,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -113,7 +115,7 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   issue.description,
-                                  style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                                 ),
                               ],
                             ),
@@ -139,14 +141,14 @@ class _SecurityIssuesScreenState extends State<SecurityIssuesScreen> {
               child: Icon(Icons.check_circle_outline, size: 60, color: Colors.white),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Tài Khoản An Toàn!',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+              style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 20),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Không phát hiện thấy sự cố bảo mật nào. Tài khoản của bạn đã được tối ưu hóa bảo vệ tốt nhất.',
-              style: TextStyle(color: Colors.white54, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],

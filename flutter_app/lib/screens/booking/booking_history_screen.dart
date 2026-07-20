@@ -7,8 +7,10 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/payment_config.dart';
 import '../../services/booking_service.dart';
+import '../../services/email_service.dart';
 import '../../models/booking.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/payment_countdown_timer.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   final int currentTabIndex;
@@ -59,7 +61,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   Future<void> _handlePayment(int bookingId, double totalAmount) async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16162A),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -71,10 +73,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Chọn Phương Thức Thanh Toán',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -82,11 +84,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                 const SizedBox(height: 20),
                 ListTile(
                   leading: const Icon(Icons.wallet, color: Color(0xFFC084FC)),
-                  title: const Text('Ví Điện Tử Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  title: Text('Ví Điện Tử Demo', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                  subtitle: Text('Thanh toán và nhận vé ngay lập tức (Test)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    side: BorderSide(color: AppColors.border),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -96,11 +98,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                 const SizedBox(height: 12),
                 ListTile(
                   leading: const Icon(Icons.account_balance, color: Color(0xFFC084FC)),
-                  title: const Text('Chuyển Khoản Ngân Hàng (SePay)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  title: Text('Chuyển Khoản Ngân Hàng (SePay)', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                  subtitle: Text('Quét mã VietQR chuyển khoản tự động', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    side: BorderSide(color: AppColors.border),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -143,17 +145,17 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF16162A),
+              backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: const Text('Thanh Toán Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: Text('Thanh Toán Demo', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
               content: Text(
                 'Bạn có chắc chắn muốn thanh toán số tiền ${formatter.format(totalAmount)} cho đặt vé #${bookingId} qua ví Demo?',
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
               actions: [
                 TextButton(
                   onPressed: isPaying ? null : () => Navigator.pop(context),
-                  child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+                  child: Text('Hủy', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isPaying ? null : () async {
@@ -209,6 +211,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               _loadBookingHistory();
               bookingService.getBookingById(bookingId).then((updatedBooking) {
                 _showTicketDialog(updatedBooking);
+                try {
+                  emailService.sendTicketConfirmationEmail(updatedBooking);
+                } catch (e) {
+                  debugPrint('Lỗi gửi email xác nhận vé SePay: $e');
+                }
               });
             }
           }
@@ -223,19 +230,19 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF16162A),
+              backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Thanh Toán SePay',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: Icon(Icons.close, color: AppColors.textSecondary),
                     onPressed: () {
                       bookingStream.cancel();
                       Navigator.pop(context);
@@ -248,10 +255,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Quét mã VietQR dưới đây để thanh toán chuyển khoản nhanh:',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 16),
                     ClipRRect(
@@ -336,7 +343,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                             isChecking 
                               ? 'Đang kiểm tra hệ thống...' 
                               : 'Đang chờ hệ thống tự động xác nhận chuyển khoản...',
-                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                           ),
                         ),
                       ],
@@ -350,7 +357,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     bookingStream.cancel();
                     Navigator.pop(context);
                   },
-                  child: const Text('Hủy / Đóng', style: TextStyle(color: Colors.white54)),
+                  child: Text('Hủy / Đóng', style: TextStyle(color: AppColors.textSecondary)),
                 ),
                 ElevatedButton(
                   onPressed: isChecking
@@ -365,6 +372,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 Navigator.pop(context);
                                 _loadBookingHistory();
                                 _showTicketDialog(updated);
+                                try {
+                                  emailService.sendTicketConfirmationEmail(updated);
+                                } catch (e) {
+                                  debugPrint('Lỗi gửi email xác nhận vé SePay: $e');
+                                }
                               }
                             } else {
                               if (context.mounted) {
@@ -427,7 +439,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             flex: 3,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ),
           Expanded(
@@ -438,7 +450,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   child: SelectableText(
                     value,
                     style: TextStyle(
-                      color: valueColor ?? Colors.white,
+                      color: valueColor ?? AppColors.textPrimary,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
@@ -481,17 +493,17 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF1E1B4B),
+              backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text('Hủy Đặt Vé', style: TextStyle(color: Colors.white)),
-              content: const Text(
+              title: Text('Hủy Đặt Vé', style: TextStyle(color: AppColors.textPrimary)),
+              content: Text(
                 'Bạn có chắc chắn muốn hủy đặt vé này? Ghế đã chọn sẽ được giải phóng.',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
               actions: [
                 TextButton(
                   onPressed: isCancelling ? null : () => Navigator.pop(context),
-                  child: const Text('Không', style: TextStyle(color: Colors.white54)),
+                  child: Text('Không', style: TextStyle(color: AppColors.textMuted)),
                 ),
                 ElevatedButton(
                   onPressed: isCancelling ? null : () async {
@@ -533,7 +545,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: _TicketDialogContent(booking: booking),
+          child: TicketDialogContent(booking: booking),
         );
       },
     );
@@ -587,7 +599,13 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         final String seatNames = seats.map((s) => '${s.row}${s.number}').join(', ');
 
                         // ✅ Xác định màu & nhãn trạng thái
-                        // Nếu PENDING mà suất chiếu đã qua → coi như HẾT HẠN
+                        // Nếu PENDING mà suất chiếu đã qua hoặc quá 5 phút giữ chỗ → coi như HẾT HẠN
+                        final bool isFiveMinHoldExpired = booking.createdAt
+                            .add(const Duration(minutes: 5))
+                            .isBefore(DateTime.now());
+                        final bool isBookingExpired = booking.status == BookingStatus.expired ||
+                            (booking.status == BookingStatus.pending && (isShowtimePast || isFiveMinHoldExpired));
+
                         Color statusColor;
                         String statusText;
                         if (booking.status == BookingStatus.confirmed) {
@@ -596,12 +614,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         } else if (booking.status == BookingStatus.cancelled) {
                           statusColor = Colors.red;
                           statusText = 'ĐÃ HỦY';
-                        } else if (booking.status == BookingStatus.expired ||
-                            (booking.status == BookingStatus.pending && isShowtimePast)) {
+                        } else if (isBookingExpired) {
                           statusColor = Colors.grey.shade600;
                           statusText = 'HẾT HẠN';
                         } else {
-                          // PENDING và suất chiếu chưa qua
+                          // PENDING và còn trong thời hạn 5 phút thanh toán
                           statusColor = const Color(0xFFF59E0B);
                           statusText = 'CHỜ THANH TOÁN';
                         }
@@ -616,26 +633,42 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Header: Status & Booking ID
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Mã đặt vé: #${booking.id}',
-                                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Mã đặt vé: #${booking.id}',
+                                        style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                       ),
-                                      child: Text(
-                                        statusText,
-                                        style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                      Row(
+                                        children: [
+                                          if (booking.status == BookingStatus.pending && !isBookingExpired) ...[
+                                            PaymentCountdownTimer(
+                                              createdAt: booking.createdAt,
+                                              timeoutMinutes: 5,
+                                              compact: true,
+                                              onTimerExpired: () async {
+                                                await emailService.sendHoldExpiredEmail(booking);
+                                                _loadBookingHistory();
+                                              },
+                                            ),
+                                            const SizedBox(width: 8),
+                                          ],
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              statusText,
+                                              style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
                                 const SizedBox(height: 12),
 
                                 // Movie Title
@@ -691,7 +724,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                      // - PENDING + suất chiếu chưa qua → Hủy + Thanh Toán
                                      // - PENDING + suất chiếu ĐÃ QUA → Badge "Hết Hạn" (không cho thanh toán)
                                      // - CONFIRMED → Xem QR
-                                     if (booking.status == BookingStatus.pending && !isShowtimePast)
+                                     if (booking.status == BookingStatus.pending && !isBookingExpired)
                                        Row(
                                          children: [
                                            TextButton(
@@ -709,8 +742,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                            ),
                                          ],
                                        )
-                                     else if (booking.status == BookingStatus.pending && isShowtimePast)
-                                       // Pending nhưng suất đã qua → hiện hết hạn
+                                     else if (isBookingExpired && booking.status == BookingStatus.pending)
                                        Container(
                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                          decoration: BoxDecoration(
@@ -860,16 +892,16 @@ class TicketSeparatorPainter extends CustomPainter {
 }
 
 /// Widget Stateful quản lý giao diện cuống vé và tự động tăng 100% độ sáng màn hình
-class _TicketDialogContent extends StatefulWidget {
+class TicketDialogContent extends StatefulWidget {
   final Booking booking;
 
-  const _TicketDialogContent({required this.booking});
+  const TicketDialogContent({required this.booking});
 
   @override
-  State<_TicketDialogContent> createState() => _TicketDialogContentState();
+  State<TicketDialogContent> createState() => _TicketDialogContentState();
 }
 
-class _TicketDialogContentState extends State<_TicketDialogContent> {
+class _TicketDialogContentState extends State<TicketDialogContent> {
   double? _originalBrightness;
 
   @override
@@ -928,9 +960,9 @@ class _TicketDialogContentState extends State<_TicketDialogContent> {
       child: Container(
         width: 320,
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1B4B), // Elevated Indigo surface
+          color: AppColors.surfaceHigh, // Elevated Indigo/surface
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -957,7 +989,7 @@ class _TicketDialogContentState extends State<_TicketDialogContent> {
                       IconButton(
                         constraints: const BoxConstraints(),
                         padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 20),
+                        icon: Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 20),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -967,7 +999,7 @@ class _TicketDialogContentState extends State<_TicketDialogContent> {
                   Text(
                     movieTitle,
                     style: GoogleFonts.outfit(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                       height: 1.2,
@@ -1065,7 +1097,7 @@ class _TicketDialogContentState extends State<_TicketDialogContent> {
         Text(
           label,
           style: GoogleFonts.robotoMono(
-            color: const Color(0xFF6B6B8A), // textMuted
+            color: AppColors.textMuted, // textMuted
             fontSize: 9,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.2,
@@ -1075,7 +1107,7 @@ class _TicketDialogContentState extends State<_TicketDialogContent> {
         Text(
           value,
           style: GoogleFonts.outfit(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             fontSize: 13.5,
           ),

@@ -11,6 +11,8 @@ import 'package:geolocator/geolocator.dart';
 import '../../services/location_service.dart';
 import '../../widgets/booking_components.dart';
 import '../booking/cinema_detail_screen.dart';
+import '../profile/notice_screen.dart';
+import 'movie_search_delegate.dart';
 
 class HomeMovieScreen extends StatefulWidget {
   const HomeMovieScreen({super.key});
@@ -156,21 +158,29 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
             ),
             const SizedBox(width: 10),
             Text('MovieTicket',
-              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
+              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary, letterSpacing: 0.5),
             ),
           ],
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.search_rounded, color: AppColors.textSecondary),
-            onPressed: () {},
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: MovieSearchDelegate(movies: _nowShowing),
+              );
+            },
             tooltip: 'Tìm kiếm',
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
               icon: Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary),
-              onPressed: () {},
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NoticeScreen()),
+              ),
               tooltip: 'Thông báo',
             ),
           ),
@@ -205,7 +215,7 @@ class _HomeMovieScreenState extends State<HomeMovieScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
                 child: Row(
                   children: [
-                    const Text('Rạp Phim Liên Kết', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('Rạp Phim Liên Kết', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
                     if (_isLocating)
                       const SizedBox(

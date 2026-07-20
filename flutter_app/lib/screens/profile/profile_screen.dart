@@ -8,6 +8,7 @@ import '../../models/user.dart';
 import '../../models/security.dart';
 import '../auth/login_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
+import 'notice_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -55,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Đăng Xuất', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Đăng Xuất', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         content: Text('Bạn có chắc chắn muốn đăng xuất?', style: TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
@@ -93,12 +94,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Đổi Tên Hiển Thị', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text('Đổi Tên Hiển Thị', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: controller,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 labelText: 'Họ và tên',
                 prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textMuted),
@@ -152,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Đổi Mật Khẩu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          title: Text('Đổi Mật Khẩu', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -210,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return TextFormField(
       controller: controller,
       obscureText: true,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
@@ -221,6 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     final initials = _name.isNotEmpty ? _name[0].toUpperCase() : 'K';
 
     return Scaffold(
@@ -280,7 +282,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: const Color(0xFF06B6D4),
                           title: 'Thông báo',
                           subtitle: 'Cài đặt thông báo đẩy',
-                          onTap: () {},
+                          onTap: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => const NoticeScreen())),
                         ),
                         _buildMenuItem(
                           icon: Icons.help_outline_rounded,
@@ -310,12 +313,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(String initials) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E1B4B), Color(0xFF0F0F1A)],
+          colors: isLight
+              ? [const Color(0xFFE9E3F3), const Color(0xFFD6CBE8)]
+              : [const Color(0xFF1E1B4B), const Color(0xFF0F0F1A)],
         ),
       ),
       child: SafeArea(
@@ -436,13 +442,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: GoogleFonts.outfit(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white : AppColors.textMuted,
+              color: isActive ? AppColors.textPrimary : AppColors.textMuted,
             )),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: isActive ? activeColor.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+              color: isActive ? activeColor.withOpacity(0.15) : AppColors.border.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

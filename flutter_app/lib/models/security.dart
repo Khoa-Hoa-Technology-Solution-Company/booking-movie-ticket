@@ -47,6 +47,7 @@ class SecurityAlert {
   final String severity;
   final bool read;
   final DateTime createdAt;
+  final Map<String, dynamic>? metadata;
 
   SecurityAlert({
     required this.id,
@@ -56,6 +57,7 @@ class SecurityAlert {
     required this.severity,
     required this.read,
     required this.createdAt,
+    this.metadata,
   });
 
   factory SecurityAlert.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class SecurityAlert {
       severity: json['severity'] as String? ?? 'MEDIUM',
       read: json['read'] == true,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
 }

@@ -57,22 +57,22 @@ class AppThemeData {
 
   factory AppThemeData.light() {
     return const AppThemeData(
-      background: Color(0xFFF5F5FA),
+      background: Color(0xFFF8FAFC),
       surface: Colors.white,
-      surfaceHigh: Color(0xFFEEE8F6),
-      border: Color(0x15000000),
-      textPrimary: Color(0xFF1A1A2E),
-      textSecondary: Color(0xFF4A4A6A),
-      textMuted: Color(0xFF9999B3),
+      surfaceHigh: Color(0xFFF1F5F9),
+      border: Color(0xFFE2E8F0),
+      textPrimary: Color(0xFF0F172A),
+      textSecondary: Color(0xFF334155),
+      textMuted: Color(0xFF64748B),
       backgroundGradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFFEEE8F6), Color(0xFFF5F5FA)],
+        colors: [Color(0xFFF1F5F9), Color(0xFFF8FAFC)],
       ),
       posterScrim: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Colors.transparent, Color(0xFFF5F5FA)],
+        colors: [Colors.transparent, Color(0xFFF8FAFC)],
         stops: [0.3, 1.0],
       ),
     );
@@ -236,6 +236,10 @@ class AppTheme {
         onError: Colors.white,
         surface: themeData.surface,
         onSurface: themeData.textPrimary,
+        background: themeData.background,
+        onBackground: themeData.textPrimary,
+        surfaceVariant: themeData.surfaceHigh,
+        onSurfaceVariant: themeData.textSecondary,
       ),
       textTheme: GoogleFonts.outfitTextTheme(
         brightness == Brightness.dark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,

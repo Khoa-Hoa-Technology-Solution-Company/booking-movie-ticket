@@ -144,9 +144,11 @@ class Showtime {
 class ShowtimeDetail {
   final Showtime showtime;
   final List<Seat> seats;
+  final List<int> currentUserHoldSeatIds;
 
   const ShowtimeDetail({
     required this.showtime,
     required this.seats,
+    this.currentUserHoldSeatIds = const [],
   });
 }

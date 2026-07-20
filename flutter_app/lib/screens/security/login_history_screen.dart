@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/security_service.dart';
 import '../../models/security.dart';
+import '../../core/theme/app_theme.dart';
 
 class LoginHistoryScreen extends StatefulWidget {
   const LoginHistoryScreen({super.key});
@@ -46,16 +47,17 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Đăng ký lắng nghe sự kiện đổi theme để vẽ lại giao diện lập tức
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Lịch Sử Đăng Nhập', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF16162A),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
       ),
       body: _isLoading && _items.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC084FC)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
                 Expanded(
@@ -64,10 +66,10 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                       setState(() => _page = 1);
                       await _loadHistory();
                     },
-                    color: const Color(0xFFC084FC),
+                    color: AppColors.primary,
                     child: _items.isEmpty
-                        ? const Center(
-                            child: Text('Chưa có lịch sử đăng nhập nào', style: TextStyle(color: Colors.white54)),
+                        ? Center(
+                            child: Text('Chưa có lịch sử đăng nhập nào', style: TextStyle(color: AppColors.textSecondary)),
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
@@ -87,7 +89,7 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                               if (suspicious) indicatorIcon = Icons.gpp_maybe;
 
                               return Card(
-                                color: const Color(0xFF16162A),
+                                color: AppColors.surface,
                                 margin: const EdgeInsets.only(bottom: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
@@ -114,8 +116,8 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                           children: [
                                             Text(
                                               item.email ?? item.deviceName ?? 'Thiết bị không rõ',
-                                              style: const TextStyle(
-                                                color: Colors.white,
+                                              style: TextStyle(
+                                                color: AppColors.textPrimary,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
                                               ),
@@ -123,14 +125,14 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                             const SizedBox(height: 4),
                                             Text(
                                               'IP: ${item.ipAddress ?? 'Unknown'} • ${item.userAgent ?? 'Trình duyệt không rõ'}',
-                                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                              style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
                                               dateStrFormatted,
-                                              style: const TextStyle(color: Color(0xFFC084FC), fontSize: 11, fontWeight: FontWeight.bold),
+                                              style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
                                             ),
                                             if (!success && item.reason != null) ...[
                                               const SizedBox(height: 6),
@@ -154,13 +156,13 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                 // Pagination Buttons
                 if (_totalPages > 1)
                   Container(
-                    color: const Color(0xFF16162A),
+                    color: AppColors.surface,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.chevron_left, color: Colors.white),
+                          icon: Icon(Icons.chevron_left, color: AppColors.textPrimary),
                           onPressed: _page > 1
                               ? () {
                                   setState(() => _page--);
@@ -168,9 +170,9 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen> {
                                 }
                               : null,
                         ),
-                        Text('Trang $_page / $_totalPages', style: const TextStyle(color: Colors.white)),
+                        Text('Trang $_page / $_totalPages', style: TextStyle(color: AppColors.textPrimary)),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Colors.white),
+                          icon: Icon(Icons.chevron_right, color: AppColors.textPrimary),
                           onPressed: _page < _totalPages
                               ? () {
                                   setState(() => _page++);
